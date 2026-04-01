@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>엠파크 영업현황 대시보드 | 2026년 2월</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg-base: #f2f5f2;
+      --bg-card: #ffffff;
+      --bg-card2: #f7faf7;
+      --bg-header: #004d1f;
+      --bg-tab-active: #e6f2ea;
+      --border: #d8e8d8;
+      --text-primary: #1a2e1a;
+      --text-secondary: #5a7060;
+      --text-dim: #9ab09a;
+      --green-dark: #004d1f;
+      --green-mid: #2e8b57;
+      --green-light: #74b988;
+      --positive: #15803d;
+      --negative: #dc2626;
+      --neutral: #6b7280;
+      --gap: 14px;
+      --radius: 10px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { font-size:14px; }
+    body {
+      font-family: 'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .wrap { max-width:1300px; margin:0 auto; padding:16px; }
+
+    /* 헤더 */
+    .header {
+      background: var(--bg-header);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin-bottom: var(--gap);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .header-left h1 { font-size:1.3rem; font-weight:700; color:#fff; letter-spacing:-0.3px; }
+    .header-left .sub { font-size:0.78rem; color:rgba(255,255,255,0.65); margin-top:2px; }
+    .badge { background:#2e8b57; color:#fff; font-size:0.72rem; font-weight:700; padding:4px 12px; border-radius:20px; }
+
+    /* KPI */
+    .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); margin-bottom:var(--gap); }
+    .kpi-card {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    }
+    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--radius) var(--radius) 0 0; }
+    .kpi-card.c1::before { background:#004d1f; }
+    .kpi-card.c2::before { background:#2e8b57; }
+    .kpi-card.c3::before { background:#3a7d44; }
+    .kpi-card.c4::before { background:#1a6b35; }
+    .kpi-label { font-size:0.72rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+    .kpi-value { font-size:1.9rem; font-weight:800; color:var(--text-primary); line-height:1; margin-bottom:8px; letter-spacing:-1px; }
+    .kpi-value span { font-size:1rem; font-weight:500; color:var(--text-secondary); }
+    .kpi-change { font-size:0.75rem; font-weight:600; }
+    .kpi-change.pos { color:var(--positive); }
+    .kpi-change.neg { color:var(--negative); }
+
+    /* 섹션 */
+    .section {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px 22px; margin-bottom:var(--gap); box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    }
+    .section-title {
+      font-size:0.88rem; font-weight:700; color:var(--text-primary);
+      margin-bottom:16px; display:flex; align-items:center; gap:8px;
+    }
+    .section-title .dot { width:8px; height:8px; border-radius:50%; background:var(--green-dark); }
+
+    /* 2열 */
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-bottom:var(--gap); }
+
+    /* 차트 */
+    .chart-wrap-tall { position:relative; height:380px; }
+
+    /* 탭 */
+    .tab-bar { display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+    .tab-btn {
+      background:var(--bg-card2); border:1px solid var(--border); border-radius:6px;
+      color:var(--text-secondary); font-size:0.78rem; font-weight:600;
+      padding:6px 16px; cursor:pointer; transition:all 0.15s;
+    }
+    .tab-btn.active { background:var(--bg-tab-active); border-color:#004d1f; color:#004d1f; }
+
+    /* 테이블 */
+    .tbl-scroll { overflow-x:auto; max-height:460px; overflow-y:auto; }
+    .data-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+    .data-table thead { position:sticky; top:0; z-index:2; background:var(--bg-card2); }
+    .data-table thead th {
+      padding:10px 12px; text-align:left; color:var(--text-secondary);
+      font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.4px;
+      white-space:nowrap; border-bottom:1px solid var(--border); cursor:pointer; user-select:none;
+    }
+    .data-table thead th:hover { color:var(--text-primary); }
+    .data-table tbody td { padding:9px 12px; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+    .data-table tbody tr:hover { background:#f7faf7; }
+    .data-table tbody tr:last-child td { border-bottom:none; }
+    .num-right { text-align:right; }
+    .td-pos { color:var(--positive); font-weight:600; }
+    .td-neg { color:var(--negative); font-weight:600; }
+    .td-neu { color:var(--neutral); }
+    .zone-row td { background:#e6f2ea; font-weight:700; color:#004d1f; }
+
+    /* 바 */
+    .bar-bg { background:#d1e9d8; border-radius:4px; height:6px; width:100%; min-width:60px; }
+    .bar-fill { height:6px; border-radius:4px; background:#004d1f; }
+
+    /* 페이지네이션 */
+    .pagination { display:flex; align-items:center; gap:6px; margin-top:12px; flex-wrap:wrap; }
+    .pg-btn {
+      background:var(--bg-card2); border:1px solid var(--border); border-radius:6px;
+      color:var(--text-secondary); font-size:0.75rem; padding:4px 10px; cursor:pointer;
+    }
+    .pg-btn.active { background:var(--bg-tab-active); border-color:#004d1f; color:#004d1f; font-weight:700; }
+    .pg-info { font-size:0.75rem; color:var(--text-secondary); margin-left:4px; }
+
+    /* 검색 */
+    .search-box {
+      width:100%; padding:7px 12px; border:1px solid var(--border); border-radius:6px;
+      font-size:0.82rem; color:var(--text-primary); background:var(--bg-card2);
+      outline:none; margin-bottom:10px;
+    }
+    .search-box:focus { border-color:#004d1f; }
+
+    /* 푸터 */
+    .footer { text-align:center; color:var(--text-secondary); font-size:0.72rem; padding:16px 0 8px; }
+
+    /* 반응형 */
+    @media (max-width:900px) {
+      .kpi-row { grid-template-columns:repeat(2,1fr); }
+      .two-col { grid-template-columns:1fr; }
+    }
+    @media (max-width:540px) {
+      .kpi-row { grid-template-columns:1fr 1fr; }
+      .kpi-value { font-size:1.5rem; }
+      .header-left h1 { font-size:1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🚗 엠파크 영업현황 대시보드</h1>
+      <div class="sub">기준월: 2026년 2월 | 엠파크 중고자동차 매매단지 입점 여신사 전용</div>
+    </div>
+    <div class="badge">2026년 2월 확정</div>
+  </div>
+
+  <!-- KPI 카드 -->
+  <div class="kpi-row">
+    <div class="kpi-card c1">
+      <div class="kpi-label">전체 매도대수</div>
+      <div class="kpi-value">4,150<span>대</span></div>
+      <div class="kpi-meta">
+        <div class="kpi-change neg">▼ 287대 (-6.5%) 전월比</div>
+        <div class="kpi-change neg">▼ 1,441대 (-25.8%) 전년同月</div>
+      </div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">오토론 건수</div>
+      <div class="kpi-value">1,097<span>건</span></div>
+      <div class="kpi-meta">
+        <div class="kpi-change neg">▼ 98건 (-8.2%) 전월比</div>
+        <div class="kpi-change neg">▼ 157건 (-12.5%) 전년同月</div>
+      </div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-label">오토론 비중</div>
+      <div class="kpi-value">38.2<span>%</span></div>
+      <div class="kpi-meta">
+        <div class="kpi-change neg">▼ 0.9%p 전월比 (전월 39.1%)</div>
+        <div class="kpi-change pos">▲ 2.5%p 전년同月 (전년 35.8%)</div>
+      </div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-label">전체 제시(매입)대수</div>
+      <div class="kpi-value">4,385<span>대</span></div>
+      <div class="kpi-meta">
+        <div class="kpi-change neg">▼ 499대 (-10.2%) 전월比</div>
+        <div class="kpi-change neg">▼ 932대 (-17.5%) 전년同月</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 여신사별 바 차트 + 월별 트렌드 -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> 여신사별 오토론 현황 (2026년 2월)</div>
+      <div class="chart-wrap-tall"><canvas id="yeosinChart"></canvas></div>
+    </div>
+    <div class="section">
+      <div class="section-title"><span class="dot" style="background:#2e8b57"></span> 월별 트렌드 (오토론 건수 &amp; 매도대수)</div>
+      <div class="chart-wrap-tall"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ① 여신사별 오토론 상세 현황 -->
+  <div class="section">
+    <div class="section-title"><span class="dot" style="background:#1a6b35"></span> 여신사별 오토론 상세 현황</div>
+    <div class="tbl-scroll">
+      <table class="data-table" id="yeosinTable">
+        <thead><tr>
+          <th onclick="sortTbl('yeosinTable',0,false)">여신사 ↕</th>
+          <th onclick="sortTbl('yeosinTable',1,true)" class="num-right">당월 ↕</th>
+          <th onclick="sortTbl('yeosinTable',2,true)" class="num-right">전월 ↕</th>
+          <th onclick="sortTbl('yeosinTable',3,true)" class="num-right">전년동월 ↕</th>
+          <th onclick="sortTbl('yeosinTable',4,true)" class="num-right">전월比(건) ↕</th>
+          <th onclick="sortTbl('yeosinTable',5,true)" class="num-right">전월比(%) ↕</th>
+          <th onclick="sortTbl('yeosinTable',6,true)" class="num-right">전년比(건) ↕</th>
+          <th onclick="sortTbl('yeosinTable',7,true)" class="num-right">전년比(%) ↕</th>
+          <th style="min-width:100px">점유율</th>
+        </tr></thead>
+        <tbody id="yeosinBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ② 상사별 현황 -->
+  <div class="section">
+    <div class="section-title"><span class="dot" style="background:#3a7d44"></span> 상사별 현황</div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('sangsa','jeisi',this)">제시(매입) 현황</button>
+      <button class="tab-btn" onclick="showTab('sangsa','maedo',this)">매도(판매) 현황</button>
+    </div>
+    <div id="sangsa-tab-jeisi">
+      <div class="tbl-scroll">
+        <table class="data-table" id="sangsaJeisiTable">
+          <thead><tr>
+            <th onclick="sortTbl('sangsaJeisiTable',0,false)">구분 ↕</th>
+            <th onclick="sortTbl('sangsaJeisiTable',1,true)" class="num-right">당월 ↕</th>
+            <th onclick="sortTbl('sangsaJeisiTable',2,true)" class="num-right">전월 ↕</th>
+            <th onclick="sortTbl('sangsaJeisiTable',3,true)" class="num-right">전년동월 ↕</th>
+            <th onclick="sortTbl('sangsaJeisiTable',4,true)" class="num-right">전월比(대) ↕</th>
+            <th onclick="sortTbl('sangsaJeisiTable',5,true)" class="num-right">전월比(%) ↕</th>
+            <th style="min-width:90px">비중</th>
+          </tr></thead>
+          <tbody id="sangsaJeisiBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="sangsa-tab-maedo" style="display:none">
+      <div class="tbl-scroll">
+        <table class="data-table" id="sangsaMaedoTable">
+          <thead><tr>
+            <th onclick="sortTbl('sangsaMaedoTable',0,false)">구분 ↕</th>
+            <th onclick="sortTbl('sangsaMaedoTable',1,true)" class="num-right">당월 ↕</th>
+            <th onclick="sortTbl('sangsaMaedoTable',2,true)" class="num-right">전월 ↕</th>
+            <th onclick="sortTbl('sangsaMaedoTable',3,true)" class="num-right">전년동월 ↕</th>
+            <th onclick="sortTbl('sangsaMaedoTable',4,true)" class="num-right">전월比(대) ↕</th>
+            <th onclick="sortTbl('sangsaMaedoTable',5,true)" class="num-right">전월比(%) ↕</th>
+            <th style="min-width:90px">비중</th>
+          </tr></thead>
+          <tbody id="sangsaMaedoBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 딜러별 현황 -->
+  <div class="section">
+    <div class="section-title"><span class="dot" style="background:#2e8b57"></span> 딜러별 현황</div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showTab('dealer','jeisi',this)">제시(매입) 현황</button>
+      <button class="tab-btn" onclick="showTab('dealer','maedo',this)">매도(판매) 현황</button>
+    </div>
+    <div id="dealer-tab-jeisi">
+      <input class="search-box" type="text" id="dealerJeisiSearch" placeholder="🔍  상사명 또는 딜러명 검색..." oninput="filterDealer('jeisi')">
+      <div class="tbl-scroll">
+        <table class="data-table" id="dealerJeisiTable">
+          <thead><tr>
+            <th>구역</th>
+            <th>상사명</th>
+            <th>딜러명</th>
+            <th class="num-right">당월</th>
+            <th class="num-right">전월</th>
+            <th class="num-right">전년동월</th>
+            <th class="num-right">전월比(대)</th>
+            <th class="num-right">전월比(%)</th>
+          </tr></thead>
+          <tbody id="dealerJeisiBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="dealerJeisiPag"></div>
+      <div class="pg-info" id="dealerJeisiInfo"></div>
+    </div>
+    <div id="dealer-tab-maedo" style="display:none">
+      <input class="search-box" type="text" id="dealerMaedoSearch" placeholder="🔍  상사명 또는 딜러명 검색..." oninput="filterDealer('maedo')">
+      <div class="tbl-scroll">
+        <table class="data-table" id="dealerMaedoTable">
+          <thead><tr>
+            <th>구역</th>
+            <th>상사명</th>
+            <th>딜러명</th>
+            <th class="num-right">당월</th>
+            <th class="num-right">전월</th>
+            <th class="num-right">전년동월</th>
+            <th class="num-right">전월比(대)</th>
+            <th class="num-right">전월比(%)</th>
+          </tr></thead>
+          <tbody id="dealerMaedoBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="dealerMaedoPag"></div>
+      <div class="pg-info" id="dealerMaedoInfo"></div>
+    </div>
+  </div>
+
+  <div class="footer">엠파크 영업현황 대시보드 | 2026년 2월 기준 | 내부 공유용</div>
+</div>
+
+<script>
+// ── 데이터 ──
+const YEOSIN = [
+  {name:'JB우리캐피탈',c:304,p:326,py:316,mc:-22,mr:-6.7,yc:-12,yr:-3.8},
+  {name:'KB캐피탈',c:163,p:185,py:196,mc:-22,mr:-11.9,yc:-33,yr:-16.8},
+  {name:'메리츠캐피탈',c:106,p:114,py:69,mc:-8,mr:-7.0,yc:37,yr:53.6},
+  {name:'하나캐피탈',c:92,p:100,py:152,mc:-8,mr:-8.0,yc:-60,yr:-39.5},
+  {name:'현대캐피탈',c:83,p:102,py:127,mc:-19,mr:-18.6,yc:-44,yr:-34.6},
+  {name:'BNK캐피탈',c:77,p:56,py:68,mc:21,mr:37.5,yc:9,yr:13.2},
+  {name:'케이카캐피탈',c:70,p:74,py:101,mc:-4,mr:-5.4,yc:-31,yr:-30.7},
+  {name:'우리금융캐피탈',c:37,p:59,py:56,mc:-22,mr:-37.3,yc:-19,yr:-33.9},
+  {name:'웰컴저축은행',c:36,p:45,py:42,mc:-9,mr:-20.0,yc:-6,yr:-14.3},
+  {name:'한국캐피탈',c:33,p:36,py:33,mc:-3,mr:-8.3,yc:0,yr:0.0},
+  {name:'오릭스캐피탈',c:25,p:21,py:13,mc:4,mr:19.0,yc:12,yr:92.3},
+  {name:'아이엠캐피탈',c:23,p:19,py:14,mc:4,mr:21.1,yc:9,yr:64.3},
+  {name:'신한카드',c:23,p:24,py:29,mc:-1,mr:-4.2,yc:-6,yr:-20.7},
+  {name:'삼성카드',c:6,p:9,py:11,mc:-3,mr:-33.3,yc:-5,yr:-45.5},
+  {name:'알씨아이파이낸셜',c:6,p:5,py:18,mc:1,mr:20.0,yc:-12,yr:-66.7},
+  {name:'드림앤캐쉬대부',c:2,p:0,py:0,mc:2,mr:0,yc:2,yr:0},
+  {name:'롯데캐피탈',c:2,p:14,py:0,mc:-12,mr:-85.7,yc:2,yr:0},
+  {name:'개인',c:3,p:0,py:0,mc:3,mr:0,yc:3,yr:0},
+  {name:'한국투자캐피탈',c:1,p:0,py:0,mc:1,mr:0,yc:1,yr:0},
+  {name:'리드코프',c:1,p:0,py:0,mc:1,mr:0,yc:1,yr:0},
+  {name:'비엠더블유파이낸셜',c:1,p:3,py:5,mc:-2,mr:-66.7,yc:-4,yr:-80.0},
+  {name:'미래크레디트대부',c:1,p:0,py:0,mc:1,mr:0,yc:1,yr:0},
+  {name:'상상인저축은행',c:1,p:2,py:1,mc:-1,mr:-50.0,yc:0,yr:0.0},
+  {name:'상상인플러스저축은행',c:1,p:1,py:0,mc:0,mr:0,yc:1,yr:0},
+];
+
+const SANGSA_JEISI = [
+  {name:'【타워】 합계',c:2402,p:2722,py:3110,mc:-320,mr:-11.8,isZ:true},
+  {name:'주식회사 모터스퀘어',c:188,p:177,py:147,mc:11,mr:6.2,isZ:false},
+  {name:'케이카 주식회사 인천지점',c:204,p:252,py:220,mc:-48,mr:-19.0,isZ:false},
+  {name:'오토그린모터스',c:116,p:58,py:64,mc:58,mr:100.0,isZ:false},
+  {name:'(주)국민상사',c:136,p:124,py:96,mc:12,mr:9.7,isZ:false},
+  {name:'황소모터스',c:69,p:133,py:54,mc:-64,mr:-48.1,isZ:false},
+  {name:'하준모터스 주식회사',c:68,p:99,py:62,mc:-31,mr:-31.3,isZ:false},
+  {name:'스마트상사',c:61,p:28,py:82,mc:33,mr:117.9,isZ:false},
+  {name:'주식회사 강인모터스',c:72,p:57,py:53,mc:15,mr:26.3,isZ:false},
+  {name:'주식회사 하이카모터스',c:66,p:67,py:47,mc:-1,mr:-1.5,isZ:false},
+  {name:'주식회사 제이제이오토컴퍼니',c:48,p:34,py:105,mc:14,mr:41.2,isZ:false},
+  {name:'오토플러스(주)',c:72,p:70,py:519,mc:2,mr:2.9,isZ:false},
+  {name:'(주)대한모터스',c:62,p:90,py:113,mc:-28,mr:-31.1,isZ:false},
+  {name:'조이카모터스자동차매매상사',c:32,p:53,py:33,mc:-21,mr:-39.6,isZ:false},
+  {name:'뉴AK모터스자동차매매상사',c:56,p:56,py:54,mc:0,mr:0,isZ:false},
+  {name:'자동차1번지 자동차매매상사',c:36,p:32,py:25,mc:4,mr:12.5,isZ:false},
+  {name:'참좋은모터스',c:36,p:39,py:37,mc:-3,mr:-7.7,isZ:false},
+  {name:'(주)타워모터스',c:53,p:64,py:91,mc:-11,mr:-17.2,isZ:false},
+  {name:'착한중고차',c:34,p:31,py:44,mc:3,mr:9.7,isZ:false},
+  {name:'에스케이렌터카 주식회사(엠파크매매센터)',c:22,p:5,py:1,mc:17,mr:340.0,isZ:false},
+  {name:'기타 (타워)',c:229,p:253,py:424,mc:-24,mr:-9.5,isZ:false},
+  {name:'【랜드】 합계',c:189,p:165,py:212,mc:24,mr:14.5,isZ:true},
+  {name:'케이카 주식회사 경인지점',c:189,p:165,py:212,mc:24,mr:14.5,isZ:false},
+  {name:'【허브】 합계',c:1794,p:1997,py:1995,mc:-203,mr:-10.2,isZ:true},
+  {name:'오토허브 엠파크지점',c:121,p:183,py:187,mc:-62,mr:-33.9,isZ:false},
+  {name:'와이티모터스 주식회사',c:83,p:96,py:73,mc:-13,mr:-13.5,isZ:false},
+  {name:'주식회사 유케이모터스',c:83,p:92,py:24,mc:-9,mr:-9.8,isZ:false},
+  {name:'(주)에이엠지모터스',c:71,p:101,py:39,mc:-30,mr:-29.7,isZ:false},
+  {name:'주식회사 시우자동차2',c:110,p:91,py:82,mc:19,mr:20.9,isZ:false},
+  {name:'주식회사 시우자동차',c:88,p:89,py:117,mc:-1,mr:-1.1,isZ:false},
+  {name:'(주)제이파크',c:64,p:87,py:78,mc:-23,mr:-26.4,isZ:false},
+  {name:'주식회사 시우자동차3',c:55,p:40,py:50,mc:15,mr:37.5,isZ:false},
+  {name:'굿카대표 모터스',c:63,p:66,py:76,mc:-3,mr:-4.5,isZ:false},
+  {name:'(주)엔젤모터스',c:58,p:67,py:58,mc:-9,mr:-13.4,isZ:false},
+  {name:'잘팔카',c:38,p:56,py:41,mc:-18,mr:-32.1,isZ:false},
+  {name:'주식회사 용일상사',c:61,p:74,py:103,mc:-13,mr:-17.6,isZ:false},
+  {name:'주식회사 진모터스',c:47,p:66,py:52,mc:-19,mr:-28.8,isZ:false},
+  {name:'카누리모터스',c:33,p:49,py:49,mc:-16,mr:-32.7,isZ:false},
+  {name:'카담파트너스',c:31,p:62,py:35,mc:-31,mr:-50.0,isZ:false},
+  {name:'와이비모터스',c:48,p:22,py:83,mc:26,mr:118.2,isZ:false},
+  {name:'(주)드림오토상사',c:58,p:34,py:24,mc:24,mr:70.6,isZ:false},
+  {name:'기타 (허브)',c:341,p:422,py:723,mc:-81,mr:-19.2,isZ:false},
+];
+
+const SANGSA_MAEDO = [
+  {name:'【타워】 합계',c:2260,p:2466,py:3256,mc:-206,mr:-8.4,isZ:true},
+  {name:'케이카 주식회사 인천지점',c:196,p:216,py:249,mc:-20,mr:-9.3,isZ:false},
+  {name:'주식회사 모터스퀘어',c:155,p:140,py:115,mc:15,mr:10.7,isZ:false},
+  {name:'오토그린모터스',c:74,p:64,py:48,mc:10,mr:15.6,isZ:false},
+  {name:'(주)국민상사',c:112,p:104,py:86,mc:8,mr:7.7,isZ:false},
+  {name:'오토플러스(주)',c:79,p:65,py:375,mc:14,mr:21.5,isZ:false},
+  {name:'황소모터스',c:83,p:115,py:62,mc:-32,mr:-27.8,isZ:false},
+  {name:'(주)대한모터스',c:85,p:80,py:98,mc:5,mr:6.3,isZ:false},
+  {name:'주식회사 강인모터스',c:64,p:61,py:44,mc:3,mr:4.9,isZ:false},
+  {name:'주식회사 하이카모터스',c:47,p:57,py:40,mc:-10,mr:-17.5,isZ:false},
+  {name:'주식회사 제이제이오토컴퍼니',c:46,p:40,py:95,mc:6,mr:15.0,isZ:false},
+  {name:'(주)타워모터스',c:69,p:71,py:95,mc:-2,mr:-2.8,isZ:false},
+  {name:'바른모터스',c:51,p:41,py:7,mc:10,mr:24.4,isZ:false},
+  {name:'뉴AK모터스자동차매매상사',c:70,p:63,py:67,mc:7,mr:11.1,isZ:false},
+  {name:'우정모터스',c:50,p:56,py:68,mc:-6,mr:-10.7,isZ:false},
+  {name:'기타 (타워)',c:279,p:293,py:707,mc:-14,mr:-4.8,isZ:false},
+  {name:'【랜드】 합계',c:148,p:167,py:200,mc:-19,mr:-11.4,isZ:true},
+  {name:'케이카 주식회사 경인지점',c:148,p:167,py:200,mc:-19,mr:-11.4,isZ:false},
+  {name:'【허브】 합계',c:1742,p:1804,py:2135,mc:-62,mr:-3.4,isZ:true},
+  {name:'주식회사 시우자동차2',c:98,p:89,py:79,mc:9,mr:10.1,isZ:false},
+  {name:'주식회사 시우자동차',c:90,p:89,py:105,mc:1,mr:1.1,isZ:false},
+  {name:'와이비모터스',c:58,p:30,py:93,mc:28,mr:93.3,isZ:false},
+  {name:'주식회사 유케이모터스',c:75,p:86,py:22,mc:-11,mr:-12.8,isZ:false},
+  {name:'오토허브 엠파크지점',c:115,p:153,py:178,mc:-38,mr:-24.8,isZ:false},
+  {name:'와이티모터스 주식회사',c:83,p:89,py:69,mc:-6,mr:-6.7,isZ:false},
+  {name:'주식회사 모터바겐',c:53,p:47,py:43,mc:6,mr:12.8,isZ:false},
+  {name:'(주)에이엠지모터스',c:70,p:97,py:37,mc:-27,mr:-27.8,isZ:false},
+  {name:'(주)엔젤모터스',c:53,p:63,py:48,mc:-10,mr:-15.9,isZ:false},
+  {name:'잘팔카',c:57,p:58,py:42,mc:-1,mr:-1.7,isZ:false},
+  {name:'주식회사 용일상사',c:56,p:69,py:95,mc:-13,mr:-18.8,isZ:false},
+  {name:'(주)제이파크',c:63,p:79,py:71,mc:-16,mr:-20.3,isZ:false},
+  {name:'주식회사 진모터스',c:55,p:67,py:47,mc:-12,mr:-17.9,isZ:false},
+  {name:'카담파트너스',c:47,p:59,py:33,mc:-12,mr:-20.3,isZ:false},
+  {name:'(주)카스갤러리',c:45,p:59,py:40,mc:-14,mr:-23.7,isZ:false},
+  {name:'올바른자동차',c:50,p:37,py:65,mc:13,mr:35.1,isZ:false},
+  {name:'굿카대표 모터스',c:50,p:55,py:67,mc:-5,mr:-9.1,isZ:false},
+  {name:'기타 (허브)',c:523,p:582,py:1001,mc:-59,mr:-10.1,isZ:false},
+];
+
+const DEALER_JEISI = [{z:'엠파크타워',s:'(주)국민상사',d:'강창모',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'김대주',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'김용관',c:26,p:0,py:11,mc:26,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'김지환',c:24,p:0,py:22,mc:24,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'안수현',c:9,p:0,py:5,mc:9,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'윤대형',c:6,p:0,py:8,mc:6,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'이수영',c:4,p:0,py:4,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'이운기',c:37,p:0,py:36,mc:37,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'이태근',c:10,p:0,py:5,mc:10,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'최승호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'구자용',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'김상근',c:5,p:0,py:2,mc:5,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'문무한',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'박준현',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'서주영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'이정수',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'임철재',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'정영미',c:4,p:0,py:2,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)대한모터스',d:'김일훈',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)대한모터스',d:'임현욱',c:82,p:0,py:107,mc:82,mr:0},
+{z:'엠파크타워',s:'(주)대한모터스',d:'최성민',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'김태완',c:3,p:0,py:2,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'남세현',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'박승련',c:3,p:0,py:2,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'박정현',c:6,p:0,py:7,mc:6,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'양영철',c:27,p:0,py:0,mc:27,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정동현',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정우진',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정혜선',c:1,p:0,py:5,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'홍종훈',c:4,p:0,py:8,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'강용순',c:9,p:0,py:13,mc:9,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'김용일',c:22,p:0,py:16,mc:22,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'송영롱',c:14,p:0,py:6,mc:14,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'신재경',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'장윤화',c:4,p:0,py:25,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'전승환',c:1,p:0,py:20,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'정현식',c:4,p:0,py:7,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'최미현',c:7,p:0,py:4,mc:7,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'김유성',c:5,p:0,py:7,mc:5,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'오영록',c:8,p:0,py:1,mc:8,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'윤호인',c:13,p:0,py:0,mc:13,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'이경섭',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'이충상',c:5,p:0,py:3,mc:5,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'이현태',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'전호철',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'현익상',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'홍석훈',c:40,p:0,py:33,mc:40,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'배병민',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'이대근',c:2,p:0,py:4,mc:2,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'이채봉',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'장호용',c:3,p:0,py:7,mc:3,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'장호준',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'정재환',c:12,p:0,py:16,mc:12,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'홍진석',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'S&K모터스자동차매매상사',d:'김신희',c:3,p:0,py:2,mc:3,mr:0},
+{z:'엠파크타워',s:'S&K모터스자동차매매상사',d:'김희정',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'김중호',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'김혁',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'안병준',c:23,p:0,py:32,mc:23,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'음희영',c:15,p:0,py:7,mc:15,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'이계송',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'조항현',c:9,p:0,py:7,mc:9,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'최장락',c:4,p:0,py:2,mc:4,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'김동섭',c:2,p:0,py:6,mc:2,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'서기석',c:4,p:0,py:1,mc:4,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'안중희',c:23,p:0,py:19,mc:23,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'유상민',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'황현식',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'김문성',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'김용기',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'김재준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'박양규',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'박철순',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이건',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이영진',c:1,p:0,py:4,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이재광',c:26,p:0,py:16,mc:26,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'장용원',c:9,p:0,py:3,mc:9,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'조현휘',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'하범석',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'한광교',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'김동욱',c:38,p:0,py:45,mc:38,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'김태성',c:2,p:0,py:10,mc:2,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'박세준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'조규식',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'박지훈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'위성현',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'위주환',c:6,p:0,py:10,mc:6,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'전해인',c:18,p:0,py:0,mc:18,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'최한철',c:13,p:0,py:5,mc:13,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'강천지',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'박상규',c:5,p:0,py:5,mc:5,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'성낙현',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'장혜림',c:32,p:0,py:38,mc:32,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'강구용',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'신동일',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'이경윤',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'정성주',c:78,p:0,py:15,mc:78,mr:0},
+{z:'엠파크타워',s:'범스카',d:'김홍범',c:17,p:0,py:12,mc:17,mr:0},
+{z:'엠파크타워',s:'범스카',d:'서현수',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'범스카',d:'유지웅',c:4,p:0,py:3,mc:4,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'유종완',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'이선용',c:5,p:0,py:4,mc:5,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'최재묵',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'황규철',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'황선재',c:16,p:0,py:0,mc:16,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'김강원',c:15,p:0,py:36,mc:15,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'김영진',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'김헌준',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'박현준',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'정낙훈',c:1,p:0,py:11,mc:1,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'곽지일',c:9,p:0,py:7,mc:9,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'박병오',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'박종엽',c:8,p:0,py:8,mc:8,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'이원욱',c:3,p:0,py:1,mc:3,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'이일형',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'정인호',c:8,p:0,py:11,mc:8,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'최상현',c:4,p:0,py:3,mc:4,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'김상철',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'박신천',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'오흥래',c:6,p:0,py:3,mc:6,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'유민규',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'최득선',c:15,p:0,py:12,mc:15,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'최성호',c:6,p:0,py:2,mc:6,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'황선오',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'아주네트웍스주식회사',d:'최광석',c:19,p:0,py:15,mc:19,mr:0},
+{z:'엠파크타워',s:'에스케이렌터카 주식회사(엠파크매매센터)',d:'이정환',c:5,p:0,py:1,mc:5,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'박규일',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'손민관',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'안성환',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'이원형',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'문종열',c:5,p:0,py:2,mc:5,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'안정숙',c:11,p:0,py:21,mc:11,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'임승수',c:24,p:0,py:1,mc:24,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'장경모',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'최현우',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'하기용',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'홍성각',c:12,p:0,py:8,mc:12,mr:0},
+{z:'엠파크타워',s:'오토플러스(주)',d:'고대경',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크타워',s:'오토플러스(주)',d:'권주용',c:16,p:0,py:7,mc:16,mr:0},
+{z:'엠파크타워',s:'오토플러스(주)',d:'서용현',c:11,p:0,py:12,mc:11,mr:0},
+{z:'엠파크타워',s:'오토플러스(주)',d:'소하영',c:35,p:0,py:490,mc:35,mr:0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'김동민',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'이경희',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'조태수',c:7,p:0,py:12,mc:7,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'김영돈',c:3,p:0,py:5,mc:3,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'박세민',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'배광일',c:7,p:0,py:4,mc:7,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'최기용',c:3,p:0,py:4,mc:3,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'최종서',c:10,p:0,py:6,mc:10,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'최형석',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'곽재민',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'배정환',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'백창호',c:24,p:0,py:22,mc:24,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'유대원',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'유상희',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'정창식',c:8,p:0,py:5,mc:8,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'최성우',c:5,p:0,py:6,mc:5,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'최우영',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'홍승우',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'LE TO VAN',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김영호',c:3,p:0,py:1,mc:3,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김재경',c:1,p:0,py:4,mc:1,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김준범',c:11,p:0,py:8,mc:11,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'박일근',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'최정애',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'강병식',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'김영현',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'김정태',c:1,p:0,py:8,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'김효민',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'배순식',c:5,p:0,py:6,mc:5,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'이선병',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'전유성',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'정용수',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'지훈',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'최민',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'이경희',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'장광진',c:12,p:0,py:0,mc:12,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'전병수',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'최제우',c:8,p:0,py:6,mc:8,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'함형천',c:5,p:0,py:5,mc:5,mr:0},
+{z:'엠파크타워',s:'의리차차차',d:'오병걸',c:10,p:0,py:2,mc:10,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'김종기',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'박호웅',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이준식',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이중희',c:15,p:0,py:11,mc:15,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이진용',c:10,p:0,py:4,mc:10,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이태진',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'임재호',c:2,p:0,py:7,mc:2,mr:0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'김명규',c:4,p:0,py:18,mc:4,mr:0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'김상섭',c:7,p:0,py:27,mc:7,mr:0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'정상욱',c:1,p:0,py:6,mc:1,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김동혜',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김영덕',c:6,p:0,py:7,mc:6,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김재학',c:5,p:0,py:7,mc:5,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김진수',c:7,p:0,py:1,mc:7,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'신민우',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'윤용근',c:10,p:0,py:0,mc:10,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'이욱',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'장성현',c:5,p:0,py:2,mc:5,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'차성훈',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'최중철',c:3,p:0,py:8,mc:3,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'함아름',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'공병남',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'백운명',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'이동혁',c:5,p:0,py:8,mc:5,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'최승춘',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'강미',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김기남',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김기태',c:17,p:0,py:11,mc:17,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'박종호',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'서영표',c:5,p:0,py:8,mc:5,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'안병구',c:2,p:0,py:4,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'오종현',c:5,p:0,py:8,mc:5,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'이명숙',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'임영일',c:6,p:0,py:2,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'정회원',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'조국현',c:12,p:0,py:17,mc:12,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'강창근',c:26,p:0,py:2,mc:26,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'김용원',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'김진웅',c:23,p:0,py:21,mc:23,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박성주',c:14,p:0,py:0,mc:14,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박재우',c:40,p:0,py:73,mc:40,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박재정',c:10,p:0,py:0,mc:10,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박지원',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'용석주',c:20,p:0,py:0,mc:20,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'이웅주',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'이현복',c:5,p:0,py:5,mc:5,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'최성주',c:19,p:0,py:17,mc:19,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'최유빈',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'이상현',c:11,p:0,py:9,mc:11,mr:0},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'임영선',c:6,p:0,py:9,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'장영순',c:26,p:0,py:17,mc:26,mr:0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'권선영',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'김종민',c:41,p:0,py:21,mc:41,mr:0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'김태영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'하석용',c:5,p:0,py:12,mc:5,mr:0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'허장욱',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 제이제이오토컴퍼니',d:'김정주',c:34,p:0,py:71,mc:34,mr:0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'김형오',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'설재현',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'신이헌',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'신자섭',c:4,p:0,py:3,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'김명겸',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'성항현',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'송영수',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'신민수',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'옥태완',c:3,p:0,py:7,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'이승협',c:2,p:0,py:7,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'임연호',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'정지윤',c:3,p:0,py:13,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'차재민',c:10,p:0,py:0,mc:10,mr:0},
+{z:'엠파크타워',s:'주식회사 트루카',d:'김영철',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 트루카',d:'박배혁',c:9,p:0,py:14,mc:9,mr:0},
+{z:'엠파크타워',s:'주식회사 트루카',d:'송정욱',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'강진주',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'구장근',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김기혁',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김민수',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김유동',c:1,p:0,py:8,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김장환',c:4,p:0,py:1,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'문현호',c:11,p:0,py:5,mc:11,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'박현웅',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'양광모',c:6,p:0,py:6,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이우성',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이임형',c:4,p:0,py:4,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이준영',c:8,p:0,py:2,mc:8,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'임상원',c:13,p:0,py:6,mc:13,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'채희곤',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'한윤재',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'차봇모빌리티(주)',d:'심강섭',c:25,p:0,py:64,mc:25,mr:0},
+{z:'엠파크타워',s:'착한중고차',d:'최광일',c:26,p:0,py:39,mc:26,mr:0},
+{z:'엠파크타워',s:'착한중고차',d:'최선일',c:5,p:0,py:5,mc:5,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'강철영',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'양해룡',c:2,p:0,py:4,mc:2,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'전덕제',c:18,p:0,py:20,mc:18,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'정슬찬',c:1,p:0,py:10,mc:1,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'조영삼',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'조준영',c:4,p:0,py:2,mc:4,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'강정환',c:33,p:0,py:0,mc:33,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김대열',c:5,p:0,py:1,mc:5,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김선중',c:5,p:0,py:3,mc:5,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김진우',c:12,p:0,py:0,mc:12,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'박상현',c:8,p:0,py:4,mc:8,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'오광빈',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'윤지훈',c:18,p:0,py:0,mc:18,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이만호',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이진영',c:98,p:0,py:0,mc:98,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이호창',c:36,p:0,py:0,mc:36,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'정기웅',c:13,p:0,py:0,mc:13,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'최동찬',c:21,p:0,py:0,mc:21,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'김민성',c:2,p:0,py:8,mc:2,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'김영주',c:4,p:0,py:1,mc:4,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'이영준',c:3,p:0,py:14,mc:3,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'장상욱',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'정현길',c:7,p:0,py:14,mc:7,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'주종완',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'한태훈',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'김시완',c:13,p:0,py:26,mc:13,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'김시원',c:4,p:0,py:3,mc:4,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'송기수',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'주명희',c:2,p:0,py:4,mc:2,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'송평강',c:7,p:0,py:11,mc:7,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'정두표',c:7,p:0,py:3,mc:7,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'정성진',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'정지환',c:4,p:0,py:3,mc:4,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'김서준',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'박성문',c:5,p:0,py:12,mc:5,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'박환영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'이영경',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'LUONG THANH',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김남태',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김명수',c:50,p:0,py:40,mc:50,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김현락',c:25,p:0,py:11,mc:25,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'윤인철',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'정선웅',c:7,p:0,py:2,mc:7,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'조원탁',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'고용수',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'권오찬',c:15,p:0,py:8,mc:15,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'김민성',c:9,p:0,py:8,mc:9,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'김상형',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'마석현',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'신기종',c:5,p:0,py:3,mc:5,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'허회승',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'김동섭',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'김상민',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'박승권',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'윤현덕',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'정원식',c:3,p:0,py:9,mc:3,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'황규배',c:7,p:0,py:3,mc:7,mr:0},
+{z:'엠파크타워',s:'황소모터스',d:'김창오',c:119,p:0,py:53,mc:119,mr:0},
+{z:'엠파크타워',s:'황소모터스',d:'최종훈',c:14,p:0,py:0,mc:14,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'김충회',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'남신재',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'최재호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'김성민',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'이상용',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'최재혁',c:13,p:0,py:0,mc:13,mr:0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'김승주',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'박경훈',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'유민상',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'정상호',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'박성훈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'박종영',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'신효열',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'이봉재',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'이은주',c:21,p:0,py:0,mc:21,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'전철민',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'차진석',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크랜드',s:'케이카 주식회사 경인지점',d:'정인국',c:165,p:0,py:212,mc:165,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'김현우',c:15,p:0,py:14,mc:15,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'박화랑',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'안상훈',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'이정은',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'임현빈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'한현덕',c:5,p:0,py:3,mc:5,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'김석정',c:4,p:0,py:8,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'김송환',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'박진수',c:13,p:0,py:0,mc:13,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'송차돌',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'오계환',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'오진환',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'장광웅',c:10,p:0,py:5,mc:10,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'김승환',c:21,p:0,py:13,mc:21,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'나상훈',c:5,p:0,py:3,mc:5,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'박대훈',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김경신',c:2,p:0,py:4,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김수종',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김윤태',c:15,p:0,py:3,mc:15,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김인영',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김현준',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'박성환',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'박정민',c:16,p:0,py:0,mc:16,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이부길',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이상엽',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이상준',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이호근',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'장호성',c:18,p:0,py:12,mc:18,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'천일권',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'편도열',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'황정대',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'김상철',c:48,p:0,py:50,mc:48,mr:0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'박세영',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'정희진',c:12,p:0,py:7,mc:12,mr:0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'홍덕호',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)오토위드',d:'임병준',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)오토위드',d:'장동호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)오토위드',d:'하현우',c:1,p:0,py:6,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'김성진',c:1,p:0,py:5,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'박명기',c:58,p:0,py:57,mc:58,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'윤준영',c:22,p:0,py:10,mc:22,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'이학준',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'이훈재',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'주영환',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'홍정식',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'권수영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김기욱',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김승환',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김학현',c:41,p:0,py:12,mc:41,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'류지훈',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'박지훈',c:4,p:0,py:1,mc:4,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'장준호',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'정혜정',c:6,p:0,py:6,mc:6,mr:0},
+{z:'엠파크허브',s:'(주)탁월한선택',d:'장수희',c:1,p:0,py:12,mc:1,mr:0},
+{z:'엠파크허브',s:'굿카대표 모터스',d:'이민주',c:21,p:0,py:19,mc:21,mr:0},
+{z:'엠파크허브',s:'굿카대표 모터스',d:'조용성',c:45,p:0,py:43,mc:45,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'김동호',c:24,p:0,py:21,mc:24,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'박기범',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'신정현',c:17,p:0,py:10,mc:17,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'정순덕',c:2,p:0,py:6,mc:2,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'최동석',c:6,p:0,py:4,mc:6,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'김정한',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'박주필',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'임용순',c:2,p:0,py:7,mc:2,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'하기호',c:6,p:0,py:6,mc:6,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'황세주',c:11,p:0,py:6,mc:11,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'김동남',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'박건',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'여용진',c:29,p:0,py:11,mc:29,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'이호철',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'임낙문',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'조명준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'차현두',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'구자욱',c:10,p:0,py:0,mc:10,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'권윤숙',c:7,p:0,py:17,mc:7,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'김도진',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'노경환',c:2,p:0,py:7,mc:2,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박상수',c:12,p:0,py:0,mc:12,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박형윤',c:22,p:0,py:21,mc:22,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박훈희',c:3,p:0,py:5,mc:3,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'서근용',c:17,p:0,py:10,mc:17,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'서소영',c:18,p:0,py:26,mc:18,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'성주남',c:11,p:0,py:8,mc:11,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'원은희',c:3,p:0,py:2,mc:3,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이은희',c:5,p:0,py:6,mc:5,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이혁재',c:3,p:0,py:1,mc:3,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이후병',c:2,p:0,py:8,mc:2,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'임수훈',c:7,p:0,py:11,mc:7,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'전방용',c:6,p:0,py:3,mc:6,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'조군희',c:22,p:0,py:21,mc:22,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'최영석',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'최종수',c:11,p:0,py:15,mc:11,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'황의진',c:16,p:0,py:17,mc:16,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'고정호',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'권오준',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'이주원',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'정영호',c:7,p:0,py:7,mc:7,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'최경준',c:12,p:0,py:29,mc:12,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'최남석',c:3,p:0,py:4,mc:3,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'김경진',c:6,p:0,py:9,mc:6,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'박강훈',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'안소정',c:1,p:0,py:21,mc:1,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'우상현',c:5,p:0,py:4,mc:5,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'이구',c:1,p:0,py:9,mc:1,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'이재우',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'최홍석',c:3,p:0,py:4,mc:3,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'강병우',c:4,p:0,py:7,mc:4,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김승광',c:3,p:0,py:1,mc:3,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김용문',c:25,p:0,py:16,mc:25,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김용태',c:11,p:0,py:28,mc:11,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'서근덕',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'서준석',c:26,p:0,py:17,mc:26,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'송우진',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'이성호',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'이지오',c:6,p:0,py:2,mc:6,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'최용은',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'김선철',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'김영찬',c:12,p:0,py:0,mc:12,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'전준우',c:7,p:0,py:6,mc:7,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'최민규',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'이룰',d:'이해성',c:8,p:0,py:24,mc:8,mr:0},
+{z:'엠파크허브',s:'잘팔카',d:'정원석',c:53,p:0,py:41,mc:53,mr:0},
+{z:'엠파크허브',s:'잘팔카',d:'최준기',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 누리모터스',d:'유용현',c:11,p:0,py:11,mc:11,mr:0},
+{z:'엠파크허브',s:'주식회사 누리모터스',d:'최성호',c:4,p:0,py:5,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'곽중석',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'김영균',c:12,p:0,py:7,mc:12,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'신정훈',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'임태현',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'표성민',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'허대선',c:18,p:0,py:22,mc:18,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'권영인',c:11,p:0,py:22,mc:11,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'엄정수',c:10,p:0,py:11,mc:10,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'유종찬',c:21,p:0,py:25,mc:21,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'이학주',c:35,p:0,py:58,mc:35,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'현화섭',c:12,p:0,py:0,mc:12,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'김기수',c:18,p:0,py:16,mc:18,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'류재원',c:19,p:0,py:9,mc:19,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'방희조',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이관섭',c:14,p:0,py:12,mc:14,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이종대',c:9,p:0,py:26,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이진섭',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'최태훈',c:21,p:0,py:19,mc:21,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'김민영',c:15,p:0,py:30,mc:15,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'옥도윤',c:13,p:0,py:7,mc:13,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'이성웅',c:9,p:0,py:13,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'최가람',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'김슬지',c:18,p:0,py:11,mc:18,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'김태우',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'오상빈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'김강민',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'김건휘',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'김재헌',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'오광석',c:9,p:0,py:13,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'전우용',c:27,p:0,py:24,mc:27,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'전우일',c:14,p:0,py:25,mc:14,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'정상돈',c:1,p:0,py:4,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'조민석',c:16,p:0,py:16,mc:16,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'한솔',c:1,p:0,py:5,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'한인복',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'유성곤',c:1,p:0,py:29,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김기남',c:4,p:0,py:1,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김기철',c:9,p:0,py:9,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김동혁',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김현숙',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'남동현',c:9,p:0,py:4,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'박상희',c:7,p:0,py:9,mc:7,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'박종원',c:4,p:0,py:2,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'백웅준',c:5,p:0,py:10,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'신원태',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'심재웅',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'유철',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'이승훈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'이홍재',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'장태호',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'진경화',c:4,p:0,py:7,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'진상규',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'김지연',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'윤일섭',c:5,p:0,py:10,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'이윤아',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'이재혁',c:2,p:0,py:10,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'임종빈',c:1,p:0,py:10,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'임화영',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'정윤방',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'최재호',c:9,p:0,py:6,mc:9,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'김승곤',c:2,p:0,py:2,mc:2,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'양승광',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'이대근',c:1,p:0,py:6,mc:1,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'이석만',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'장미희',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'정수용',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'주진호',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'차본주의',d:'윤보석',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'차본주의',d:'장지호',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'차본주의',d:'조원기',c:7,p:0,py:11,mc:7,mr:0},
+{z:'엠파크허브',s:'차본주의',d:'최승현',c:13,p:0,py:15,mc:13,mr:0},
+{z:'엠파크허브',s:'카누리모터스',d:'김영천',c:47,p:0,py:48,mc:47,mr:0},
+{z:'엠파크허브',s:'카누리모터스',d:'정대용',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'박건오',c:2,p:0,py:10,mc:2,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'이경동',c:47,p:0,py:0,mc:47,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'임근혁',c:5,p:0,py:1,mc:5,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'장원혁',c:8,p:0,py:2,mc:8,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'고영배',c:2,p:0,py:8,mc:2,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'김경준',c:18,p:0,py:26,mc:18,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'김지철',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'라석주',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'신현진',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'유인환',c:3,p:0,py:4,mc:3,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이성복',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이승우',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이원석',c:4,p:0,py:17,mc:4,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'김재욱',c:1,p:0,py:4,mc:1,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'김준식',c:8,p:0,py:3,mc:8,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'서경환',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'송민준',c:7,p:0,py:7,mc:7,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'심용보',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'패밀리카',d:'허석민',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'가정권',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'김정훈',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'신윤재',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'조경연',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'김광식',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'전현준',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'정병욱',c:8,p:0,py:3,mc:8,mr:0},
+{z:'엠파크허브',s:'에스엠모터스',d:'강선우',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'이레카',d:'민춘기',c:4,p:0,py:19,mc:4,mr:0},
+{z:'엠파크허브',s:'이레카',d:'이성경',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'이레카',d:'주진우',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'김은경',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'남선순',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'유성곤',c:39,p:0,py:21,mc:39,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'이계련',c:9,p:0,py:0,mc:9,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'조성동',c:23,p:0,py:0,mc:23,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'허창현',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'홍성윤',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'신재훈',c:10,p:0,py:0,mc:10,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'유재국',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'이대환',c:7,p:0,py:0,mc:7,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'이상민',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'천승환',c:19,p:0,py:0,mc:19,mr:0},
+{z:'엠파크허브',s:'주식회사 도담',d:'김우연',c:21,p:0,py:0,mc:21,mr:0},
+{z:'엠파크허브',s:'주식회사 도담',d:'김채현',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 도담',d:'노한철',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 도담',d:'장재순',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'김대하',c:27,p:0,py:0,mc:27,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'박진남',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'이범희',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'황윤모',c:11,p:0,py:0,mc:11,mr:0},
+{z:'엠파크허브',s:'주식회사 차탐',d:'유경원',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크허브',s:'주식회사 오토카인드',d:'최용운',c:23,p:0,py:0,mc:23,mr:0}];
+const DEALER_MAEDO = [{z:'엠파크타워',s:'(주)국민상사',d:'강창모',c:5,p:4,py:4,mc:1,mr:25.0},
+{z:'엠파크타워',s:'(주)국민상사',d:'김대주',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'(주)국민상사',d:'김용관',c:22,p:16,py:22,mc:6,mr:37.5},
+{z:'엠파크타워',s:'(주)국민상사',d:'김지환',c:14,p:26,py:17,mc:-12,mr:-46.2},
+{z:'엠파크타워',s:'(주)국민상사',d:'백기동',c:2,p:1,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)국민상사',d:'안수현',c:9,p:7,py:9,mc:2,mr:28.6},
+{z:'엠파크타워',s:'(주)국민상사',d:'윤대형',c:5,p:9,py:4,mc:-4,mr:-44.4},
+{z:'엠파크타워',s:'(주)국민상사',d:'이수영',c:3,p:2,py:9,mc:1,mr:50.0},
+{z:'엠파크타워',s:'(주)국민상사',d:'이운기',c:38,p:33,py:40,mc:5,mr:15.2},
+{z:'엠파크타워',s:'(주)국민상사',d:'이태근',c:13,p:10,py:5,mc:3,mr:30.0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'구자용',c:5,p:1,py:4,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'김상근',c:5,p:0,py:5,mc:5,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'이정수',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'임철재',c:0,p:3,py:0,mc:-3,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'정영미',c:6,p:0,py:0,mc:6,mr:0},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'문무한',c:2,p:6,py:0,mc:-4,mr:-66.7},
+{z:'엠파크타워',s:'(주)굿프렌즈파트너스',d:'오형규',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'김용현',c:2,p:2,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'김태완',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'박승련',c:3,p:5,py:9,mc:-2,mr:-40.0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'박정현',c:6,p:3,py:7,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'양영철',c:17,p:7,py:0,mc:10,mr:142.9},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정동현',c:2,p:1,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정우진',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'정혜선',c:3,p:0,py:6,mc:3,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'홍종훈',c:4,p:2,py:8,mc:2,mr:0},
+{z:'엠파크타워',s:'(주)케이비모터스',d:'남세현',c:2,p:4,py:0,mc:-2,mr:-50.0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'강용순',c:22,p:18,py:16,mc:4,mr:22.2},
+{z:'엠파크타워',s:'(주)타워모터스',d:'김용일',c:29,p:12,py:13,mc:17,mr:141.7},
+{z:'엠파크타워',s:'(주)타워모터스',d:'송영롱',c:0,p:16,py:21,mc:-16,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'이숙진',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'장윤화',c:5,p:3,py:15,mc:2,mr:66.7},
+{z:'엠파크타워',s:'(주)타워모터스',d:'전승환',c:0,p:6,py:17,mc:-6,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'정현식',c:4,p:0,py:6,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'최미현',c:9,p:4,py:8,mc:5,mr:125.0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'김효근',c:0,p:5,py:0,mc:-5,mr:0},
+{z:'엠파크타워',s:'(주)타워모터스',d:'신재경',c:0,p:3,py:0,mc:-3,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'김유성',c:8,p:4,py:10,mc:4,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'오영록',c:6,p:4,py:6,mc:2,mr:50.0},
+{z:'엠파크타워',s:'(주)홍차',d:'윤호인',c:11,p:6,py:0,mc:5,mr:83.3},
+{z:'엠파크타워',s:'(주)홍차',d:'이경섭',c:1,p:3,py:6,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'(주)홍차',d:'전호철',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'(주)홍차',d:'주지영',c:2,p:3,py:7,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'(주)홍차',d:'현익상',c:5,p:4,py:5,mc:1,mr:25.0},
+{z:'엠파크타워',s:'(주)홍차',d:'홍석훈',c:25,p:38,py:27,mc:-13,mr:-34.2},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'배병민',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'백정학',c:3,p:2,py:1,mc:1,mr:50.0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'이대근',c:3,p:1,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'장호용',c:6,p:12,py:14,mc:-6,mr:-50.0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'장호준',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'정재환',c:13,p:16,py:6,mc:-3,mr:-18.8},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'홍진석',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'JP모터스자동차매매상사',d:'이채봉',c:10,p:8,py:0,mc:2,mr:25.0},
+{z:'엠파크타워',s:'S&K모터스자동차매매상사',d:'김신희',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'S&K모터스자동차매매상사',d:'김희정',c:7,p:3,py:7,mc:4,mr:133.3},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'김두철',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'김혁',c:0,p:2,py:3,mc:-2,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'박태민',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'안병준',c:30,p:29,py:28,mc:1,mr:3.4},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'음희영',c:13,p:4,py:3,mc:9,mr:225.0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'이계송',c:1,p:0,py:5,mc:1,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'조항현',c:15,p:5,py:5,mc:10,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'최장락',c:6,p:2,py:2,mc:4,mr:0},
+{z:'엠파크타워',s:'뉴AK모터스자동차매매상사',d:'김중호',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'다올모터스',d:'김동섭',c:3,p:4,py:4,mc:-1,mr:-25.0},
+{z:'엠파크타워',s:'다올모터스',d:'서기석',c:4,p:15,py:1,mc:-11,mr:-73.3},
+{z:'엠파크타워',s:'다올모터스',d:'안중희',c:14,p:10,py:27,mc:4,mr:40.0},
+{z:'엠파크타워',s:'다올모터스',d:'유상민',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'다올모터스',d:'황현식',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'김재준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'박양규',c:1,p:2,py:1,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'대연상사',d:'박철순',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이영진',c:2,p:1,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이재광',c:24,p:20,py:8,mc:4,mr:20.0},
+{z:'엠파크타워',s:'대연상사',d:'장용원',c:4,p:6,py:3,mc:-2,mr:-33.3},
+{z:'엠파크타워',s:'대연상사',d:'조현휘',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'하범석',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'김문성',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'대연상사',d:'이건',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'김동욱',c:22,p:28,py:33,mc:-6,mr:-21.4},
+{z:'엠파크타워',s:'레드모터스',d:'김철근',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'김태성',c:3,p:3,py:6,mc:0,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'윤지훈',c:1,p:0,py:4,mc:1,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'최병환',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'홍성초',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'최슬기',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'조규식',c:4,p:4,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'레드모터스',d:'박세준',c:2,p:5,py:0,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'미래모터스',d:'박기영',c:0,p:1,py:3,mc:-1,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'박지훈',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'위성현',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'미래모터스',d:'위주환',c:7,p:5,py:8,mc:2,mr:40.0},
+{z:'엠파크타워',s:'미래모터스',d:'최한철',c:7,p:9,py:9,mc:-2,mr:-22.2},
+{z:'엠파크타워',s:'미래모터스',d:'전해인',c:7,p:4,py:0,mc:3,mr:75.0},
+{z:'엠파크타워',s:'민모터스',d:'강천지',c:2,p:1,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'박상규',c:6,p:3,py:12,mc:3,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'성낙현',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'안해리',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'민모터스',d:'장혜림',c:19,p:20,py:36,mc:-1,mr:-5.0},
+{z:'엠파크타워',s:'바른모터스',d:'강구용',c:21,p:3,py:0,mc:18,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'신동일',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'이경윤',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'바른모터스',d:'정성주',c:28,p:41,py:59,mc:-13,mr:-31.7},
+{z:'엠파크타워',s:'범스카',d:'김홍범',c:15,p:12,py:11,mc:3,mr:25.0},
+{z:'엠파크타워',s:'범스카',d:'서현수',c:2,p:1,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'범스카',d:'유지웅',c:0,p:3,py:3,mc:-3,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'김강원',c:9,p:11,py:35,mc:-2,mr:-18.2},
+{z:'엠파크타워',s:'스마트상사',d:'김영진',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'김헌준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'박현준',c:2,p:2,py:6,mc:0,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'변광균',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'스마트상사',d:'정낙훈',c:0,p:3,py:11,mc:-3,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'곽지일',c:9,p:11,py:14,mc:-2,mr:-18.2},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'박병오',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'이원욱',c:1,p:2,py:4,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'이일형',c:4,p:3,py:7,mc:1,mr:33.3},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'정인호',c:8,p:6,py:13,mc:2,mr:33.3},
+{z:'엠파크타워',s:'스카이모터스자동차매매상사',d:'최상현',c:2,p:1,py:5,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'김상철',c:1,p:4,py:7,mc:-3,mr:-75.0},
+{z:'엠파크타워',s:'신대진자동차',d:'김진환',c:2,p:1,py:7,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'김현태',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'오흥래',c:4,p:3,py:4,mc:1,mr:33.3},
+{z:'엠파크타워',s:'신대진자동차',d:'유민규',c:2,p:5,py:0,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'신대진자동차',d:'조성호',c:0,p:2,py:2,mc:-2,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'최득선',c:9,p:24,py:11,mc:-15,mr:-62.5},
+{z:'엠파크타워',s:'신대진자동차',d:'최성호',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'황선오',c:3,p:0,py:2,mc:3,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'김창규',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'이태건',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'신대진자동차',d:'조우진',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'신신상사 주식회사',d:'신기철',c:0,p:1,py:6,mc:-1,mr:0},
+{z:'엠파크타워',s:'신신상사 주식회사',d:'이경윤',c:0,p:2,py:2,mc:-2,mr:0},
+{z:'엠파크타워',s:'신신상사 주식회사',d:'정재권',c:0,p:16,py:7,mc:-16,mr:0},
+{z:'엠파크타워',s:'아주네트웍스주식회사',d:'최광석',c:7,p:22,py:17,mc:-15,mr:-68.2},
+{z:'엠파크타워',s:'에스케이렌터카 주식회사(엠파크매매센터)',d:'이정환',c:27,p:42,py:19,mc:-15,mr:-35.7},
+{z:'엠파크타워',s:'에쿠스자동차',d:'안성환',c:3,p:3,py:2,mc:0,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'이성우',c:2,p:0,py:3,mc:2,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'최병환',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'박규일',c:4,p:2,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'에쿠스자동차',d:'손민관',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'고명현',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'김지환',c:1,p:1,py:4,mc:0,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'김진우',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'문종열',c:0,p:2,py:2,mc:-2,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'안정숙',c:22,p:26,py:31,mc:-4,mr:-15.4},
+{z:'엠파크타워',s:'오토그린모터스',d:'안한준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'이로운',c:4,p:4,py:8,mc:0,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'이원식',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'이해성',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'오토그린모터스',d:'임승수',c:36,p:25,py:0,mc:11,mr:44.0},
+{z:'엠파크타워',s:'오토그린모터스',d:'장경모',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'오토그린모터스',d:'최현우',c:3,p:6,py:0,mc:-3,mr:-50.0},
+{z:'엠파크타워',s:'오토그린모터스',d:'홍성각',c:3,p:6,py:11,mc:-3,mr:-50.0},
+{z:'엠파크타워',s:'오토그린모터스',d:'김은정',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'김동민',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'이경희',c:3,p:2,py:0,mc:1,mr:50.0},
+{z:'엠파크타워',s:'오토피아자동차매매상사',d:'조태수',c:3,p:8,py:13,mc:-5,mr:-62.5},
+{z:'엠파크타워',s:'우정모터스',d:'남광현',c:9,p:4,py:5,mc:5,mr:125.0},
+{z:'엠파크타워',s:'우정모터스',d:'류정균',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'배정환',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'백창호',c:14,p:9,py:8,mc:5,mr:55.6},
+{z:'엠파크타워',s:'우정모터스',d:'유상희',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'이호현',c:1,p:0,py:10,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'정창식',c:4,p:5,py:7,mc:-1,mr:-20.0},
+{z:'엠파크타워',s:'우정모터스',d:'최성우',c:3,p:3,py:2,mc:0,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'최영일',c:1,p:0,py:9,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'최우영',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'우정모터스',d:'홍승완',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'홍승우',c:3,p:4,py:0,mc:-1,mr:-25.0},
+{z:'엠파크타워',s:'우정모터스',d:'곽재민',c:6,p:2,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'유대원',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'우정모터스',d:'모문종',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'LE TO VAN',c:1,p:2,py:4,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김영호',c:0,p:2,py:2,mc:-2,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김재경',c:1,p:3,py:7,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'김준범',c:2,p:4,py:6,mc:-2,mr:-50.0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'박일근',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'최정애',c:1,p:2,py:1,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'원스탑모터스 주식회사',d:'신동엽',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'강병식',c:0,p:3,py:0,mc:-3,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'김영현',c:3,p:3,py:3,mc:0,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'김효민',c:1,p:2,py:4,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'유성모터스',d:'배순식',c:3,p:1,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'이재혁',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'유성모터스',d:'전유성',c:5,p:4,py:5,mc:1,mr:25.0},
+{z:'엠파크타워',s:'유성모터스',d:'지훈',c:1,p:3,py:1,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'유성모터스',d:'최민',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'이경희',c:1,p:2,py:2,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'전병수',c:7,p:6,py:10,mc:1,mr:16.7},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'최제우',c:0,p:5,py:8,mc:-5,mr:0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'함형천',c:4,p:5,py:7,mc:-1,mr:-20.0},
+{z:'엠파크타워',s:'유원모터스자동차매매상사',d:'장광진',c:6,p:5,py:0,mc:1,mr:20.0},
+{z:'엠파크타워',s:'의리차차차',d:'권명희',c:0,p:13,py:6,mc:-13,mr:0},
+{z:'엠파크타워',s:'의리차차차',d:'김민성',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'의리차차차',d:'오병걸',c:5,p:4,py:8,mc:1,mr:25.0},
+{z:'엠파크타워',s:'의리차차차',d:'오상영',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'의리차차차',d:'이재준',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'김종기',c:0,p:2,py:1,mc:-2,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이준식',c:2,p:2,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이중희',c:17,p:9,py:12,mc:8,mr:88.9},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이진용',c:6,p:7,py:6,mc:-1,mr:-14.3},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'이태진',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'임재호',c:2,p:2,py:8,mc:0,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'조현수',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'자동차1번지 자동차매매상사',d:'박호웅',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'김명규',c:3,p:3,py:11,mc:0,mr:0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'김상섭',c:7,p:4,py:11,mc:3,mr:75.0},
+{z:'엠파크타워',s:'조은자동차매매상사',d:'정상욱',c:7,p:3,py:6,mc:4,mr:133.3},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김동혜',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김영덕',c:9,p:6,py:5,mc:3,mr:50.0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김재학',c:2,p:2,py:5,mc:0,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'김진수',c:0,p:6,py:0,mc:-6,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'신민우',c:4,p:2,py:1,mc:2,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'이욱',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'장성현',c:2,p:3,py:1,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'최중철',c:6,p:4,py:5,mc:2,mr:50.0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'윤용근',c:1,p:9,py:0,mc:-8,mr:-88.9},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'차성훈',c:4,p:2,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'조이카모터스자동차매매상사',d:'함아름',c:3,p:2,py:0,mc:1,mr:50.0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'공병남',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'김성윤',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'백운명',c:2,p:2,py:5,mc:0,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'유근만',c:0,p:1,py:2,mc:-1,mr:0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'유나리',c:5,p:2,py:8,mc:3,mr:150.0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'이동혁',c:1,p:4,py:5,mc:-3,mr:-75.0},
+{z:'엠파크타워',s:'좋은차와사람들자동차매매상사',d:'최승춘',c:1,p:2,py:7,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김기남',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김기태',c:25,p:13,py:13,mc:12,mr:92.3},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김동현',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'김준호',c:0,p:2,py:1,mc:-2,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'박종호',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'서영표',c:5,p:7,py:10,mc:-2,mr:-28.6},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'안병구',c:2,p:2,py:7,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'오종현',c:9,p:3,py:3,mc:6,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'이명숙',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'임영일',c:5,p:7,py:3,mc:-2,mr:-28.6},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'정회원',c:5,p:1,py:2,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 강인모터스',d:'조국현',c:8,p:11,py:18,mc:-3,mr:-27.3},
+{z:'엠파크타워',s:'주식회사 써니카',d:'박정호',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'박종영',c:0,p:2,py:2,mc:-2,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'신효열',c:0,p:9,py:7,mc:-9,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'이봉재',c:0,p:4,py:4,mc:-4,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'이은주',c:0,p:10,py:27,mc:-10,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'전철민',c:0,p:4,py:1,mc:-4,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'차진석',c:0,p:9,py:2,mc:-9,mr:0},
+{z:'엠파크타워',s:'주식회사 써니카',d:'현종기',c:0,p:13,py:0,mc:-13,mr:0},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'이상현',c:6,p:9,py:9,mc:-3,mr:-33.3},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'임영선',c:5,p:7,py:12,mc:-2,mr:-28.6},
+{z:'엠파크타워',s:'주식회사 에스와이오토',d:'장영순',c:17,p:23,py:22,mc:-6,mr:-26.1},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'김만철',c:3,p:2,py:0,mc:1,mr:50.0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'김종민',c:27,p:38,py:22,mc:-11,mr:-28.9},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'하석용',c:6,p:8,py:13,mc:-2,mr:-25.0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'김태영',c:2,p:4,py:0,mc:-2,mr:-50.0},
+{z:'엠파크타워',s:'주식회사 오토브라더스',d:'임준우',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'김형오',c:2,p:5,py:3,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'신이헌',c:2,p:5,py:1,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'신자섭',c:3,p:7,py:11,mc:-4,mr:-57.1},
+{z:'엠파크타워',s:'주식회사 케이비인증중고차',d:'설재현',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'옥태완',c:5,p:5,py:3,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'이승협',c:2,p:5,py:5,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'임연호',c:4,p:5,py:4,mc:-1,mr:-20.0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'정지윤',c:2,p:7,py:10,mc:-5,mr:-71.4},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'차재민',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'한정훈',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'성항현',c:19,p:9,py:0,mc:10,mr:111.1},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'송영수',c:0,p:7,py:0,mc:-7,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'김명겸',c:7,p:7,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 투게더카',d:'신민수',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 트루카',d:'박배혁',c:13,p:17,py:10,mc:-4,mr:-23.5},
+{z:'엠파크타워',s:'주식회사 트루카',d:'김영철',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'강진주',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김유동',c:0,p:3,py:13,mc:-3,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김장환',c:6,p:3,py:2,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'노영완',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'문현호',c:10,p:9,py:12,mc:1,mr:11.1},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'박현웅',c:1,p:2,py:1,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'양광모',c:3,p:5,py:1,mc:-2,mr:-40.0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'원주희',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이우성',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이임형',c:2,p:3,py:5,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'이준영',c:3,p:4,py:6,mc:-1,mr:-25.0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'임상원',c:8,p:8,py:14,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'한윤재',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'구장근',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 하이카모터스',d:'김기혁',c:7,p:2,py:0,mc:5,mr:250.0},
+{z:'엠파크타워',s:'착한중고차',d:'최광일',c:26,p:27,py:44,mc:-1,mr:-3.7},
+{z:'엠파크타워',s:'착한중고차',d:'최선일',c:6,p:6,py:7,mc:0,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'강철영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'안민희',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'양해룡',c:3,p:2,py:3,mc:1,mr:50.0},
+{z:'엠파크타워',s:'참좋은모터스',d:'전덕제',c:17,p:21,py:10,mc:-4,mr:-19.0},
+{z:'엠파크타워',s:'참좋은모터스',d:'정슬찬',c:0,p:3,py:15,mc:-3,mr:0},
+{z:'엠파크타워',s:'참좋은모터스',d:'조영삼',c:11,p:12,py:4,mc:-1,mr:-8.3},
+{z:'엠파크타워',s:'참좋은모터스',d:'조준영',c:5,p:2,py:3,mc:3,mr:150.0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김대열',c:32,p:42,py:9,mc:-10,mr:-23.8},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김선중',c:35,p:45,py:48,mc:-10,mr:-22.2},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'김진우',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'박상현',c:39,p:44,py:43,mc:-5,mr:-11.4},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'선보규',c:1,p:4,py:114,mc:-3,mr:-75.0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'오광빈',c:2,p:9,py:5,mc:-7,mr:-77.8},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'윤지훈',c:8,p:3,py:0,mc:5,mr:166.7},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이만호',c:31,p:33,py:32,mc:-2,mr:-6.1},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이진영',c:21,p:16,py:0,mc:5,mr:31.2},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'정기웅',c:5,p:1,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'최동찬',c:6,p:5,py:0,mc:1,mr:20.0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'강정환',c:6,p:8,py:0,mc:-2,mr:-25.0},
+{z:'엠파크타워',s:'케이카 주식회사 인천지점',d:'이호창',c:8,p:6,py:0,mc:2,mr:33.3},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'김민성',c:5,p:5,py:10,mc:0,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'김영주',c:1,p:6,py:2,mc:-5,mr:-83.3},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'이영준',c:2,p:4,py:7,mc:-2,mr:-50.0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'장상욱',c:5,p:5,py:8,mc:0,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'정경영',c:0,p:1,py:4,mc:-1,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'정현길',c:6,p:8,py:13,mc:-2,mr:-25.0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'주종완',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'코리아모터스자동차매매상사',d:'한태훈',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'김도일',c:1,p:1,py:2,mc:0,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'김시완',c:17,p:11,py:23,mc:6,mr:54.5},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'김시원',c:7,p:6,py:6,mc:1,mr:16.7},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'백수창',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'송기수',c:1,p:2,py:5,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'안태석',c:0,p:1,py:3,mc:-1,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'전병천',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'코카스모터스자동차매매상사',d:'주명희',c:8,p:4,py:4,mc:4,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'김영진',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'킹덤모터스',d:'송평강',c:4,p:3,py:14,mc:1,mr:33.3},
+{z:'엠파크타워',s:'킹덤모터스',d:'정두표',c:2,p:10,py:7,mc:-8,mr:-80.0},
+{z:'엠파크타워',s:'킹덤모터스',d:'정지환',c:1,p:2,py:4,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김남태',c:1,p:1,py:2,mc:0,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김명수',c:30,p:52,py:44,mc:-22,mr:-42.3},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'김현락',c:15,p:21,py:16,mc:-6,mr:-28.6},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'윤인철',c:3,p:3,py:7,mc:0,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'정선웅',c:3,p:3,py:4,mc:0,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'조원탁',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'하준모터스 주식회사',d:'LUONG THANH',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'한결모터스',d:'권오찬',c:12,p:14,py:9,mc:-2,mr:-14.3},
+{z:'엠파크타워',s:'한결모터스',d:'김민성',c:8,p:12,py:8,mc:-4,mr:-33.3},
+{z:'엠파크타워',s:'한결모터스',d:'김상형',c:2,p:1,py:4,mc:1,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'신기종',c:4,p:1,py:4,mc:3,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'허회승',c:3,p:3,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'한결모터스',d:'마석현',c:1,p:4,py:0,mc:-3,mr:-75.0},
+{z:'엠파크타워',s:'한결모터스',d:'고용수',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'김동섭',c:1,p:1,py:3,mc:0,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'김상민',c:3,p:0,py:1,mc:3,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'정원식',c:2,p:2,py:9,mc:0,mr:0},
+{z:'엠파크타워',s:'한솔모터스',d:'황규배',c:2,p:3,py:3,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'한솔모터스',d:'윤현덕',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'오토플러스(주)',d:'권주용',c:9,p:11,py:9,mc:-2,mr:-18.2},
+{z:'엠파크타워',s:'오토플러스(주)',d:'서용현',c:9,p:7,py:7,mc:2,mr:28.6},
+{z:'엠파크타워',s:'오토플러스(주)',d:'소하영',c:50,p:66,py:398,mc:-16,mr:-24.2},
+{z:'엠파크타워',s:'오토플러스(주)',d:'고대경',c:11,p:6,py:0,mc:5,mr:83.3},
+{z:'엠파크타워',s:'주식회사 제이제이오토컴퍼니',d:'김정주',c:42,p:42,py:72,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 제이제이오토컴퍼니',d:'이수람',c:4,p:2,py:21,mc:2,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'권명희',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'유종완',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'이선용',c:2,p:1,py:3,mc:1,mr:0},
+{z:'엠파크타워',s:'세원자동차',d:'황규철',c:1,p:7,py:4,mc:-6,mr:-85.7},
+{z:'엠파크타워',s:'세원자동차',d:'황선재',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'차봇모빌리티(주)',d:'박태주',c:4,p:0,py:14,mc:4,mr:0},
+{z:'엠파크타워',s:'차봇모빌리티(주)',d:'심강섭',c:15,p:35,py:72,mc:-20,mr:-57.1},
+{z:'엠파크타워',s:'차봇모빌리티(주)',d:'최병두',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)대한모터스',d:'임현욱',c:83,p:115,py:99,mc:-32,mr:-27.8},
+{z:'엠파크타워',s:'(주)대한모터스',d:'장용석',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크타워',s:'(주)대한모터스',d:'최성민',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크타워',s:'황소모터스',d:'김창오',c:78,p:64,py:72,mc:14,mr:21.9},
+{z:'엠파크타워',s:'황소모터스',d:'황명연',c:3,p:3,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'황소모터스',d:'최종훈',c:2,p:3,py:0,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'강창근',c:24,p:23,py:2,mc:1,mr:4.3},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'김종윤',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'김진웅',c:23,p:27,py:14,mc:-4,mr:-14.8},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박성주',c:10,p:17,py:0,mc:-7,mr:-41.2},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박재우',c:18,p:35,py:61,mc:-17,mr:-48.6},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박재정',c:18,p:4,py:0,mc:14,mr:350.0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'이현복',c:8,p:9,py:12,mc:-1,mr:-11.1},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'최성주',c:16,p:21,py:22,mc:-5,mr:-23.8},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'최유빈',c:5,p:7,py:0,mc:-2,mr:-28.6},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'용석주',c:20,p:26,py:0,mc:-6,mr:-23.1},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'박지원',c:5,p:1,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'김용원',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 모터스퀘어',d:'이웅주',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'김영돈',c:1,p:3,py:3,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'우민모터스',d:'김원상',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'박세민',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'배광일',c:3,p:1,py:2,mc:2,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'최기용',c:2,p:5,py:4,mc:-3,mr:-60.0},
+{z:'엠파크타워',s:'우민모터스',d:'최종서',c:6,p:3,py:7,mc:3,mr:0},
+{z:'엠파크타워',s:'우민모터스',d:'최형석',c:1,p:3,py:1,mc:-2,mr:-66.7},
+{z:'엠파크타워',s:'플러스오토',d:'김서준',c:9,p:6,py:17,mc:3,mr:50.0},
+{z:'엠파크타워',s:'플러스오토',d:'김성자',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'박무열',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'박성문',c:6,p:14,py:7,mc:-8,mr:-57.1},
+{z:'엠파크타워',s:'플러스오토',d:'박환영',c:4,p:2,py:5,mc:2,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'박희서',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'플러스오토',d:'이영경',c:6,p:2,py:0,mc:4,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'최재호',c:4,p:1,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'남신재',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크타워',s:'주식회사 베스트토요타',d:'김충회',c:3,p:4,py:0,mc:-1,mr:-25.0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'최재혁',c:2,p:8,py:0,mc:-6,mr:-75.0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'김성민',c:4,p:6,py:0,mc:-2,mr:-33.3},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'신종무',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크타워',s:'세이프웨이오토 주식회사',d:'이상용',c:2,p:3,py:0,mc:-1,mr:-33.3},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'김승주',c:0,p:3,py:0,mc:-3,mr:0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'유민상',c:11,p:2,py:0,mc:9,mr:450.0},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'정상호',c:4,p:3,py:0,mc:1,mr:33.3},
+{z:'엠파크타워',s:'주식회사 지티오토컴퍼니',d:'박경훈',c:7,p:2,py:0,mc:5,mr:250.0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'박성훈',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'박종영',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'신효열',c:4,p:1,py:0,mc:3,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'이봉재',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'이은주',c:7,p:4,py:0,mc:3,mr:75.0},
+{z:'엠파크타워',s:'주식회사 카딜',d:'차진석',c:4,p:0,py:0,mc:4,mr:0},
+{z:'엠파크랜드',s:'케이카 주식회사 경인지점',d:'정인국',c:146,p:167,py:199,mc:-21,mr:-12.6},
+{z:'엠파크허브',s:'(주)경원모터스',d:'공태근',c:1,p:1,py:4,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'김현우',c:18,p:8,py:15,mc:10,mr:125.0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'안상훈',c:4,p:1,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'유재준',c:1,p:2,py:6,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'임현빈',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'정연순',c:1,p:2,py:1,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'한현덕',c:4,p:3,py:8,mc:1,mr:33.3},
+{z:'엠파크허브',s:'(주)경원모터스',d:'이정은',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크허브',s:'(주)경원모터스',d:'박화랑',c:8,p:13,py:0,mc:-5,mr:-38.5},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'김석정',c:5,p:2,py:4,mc:3,mr:150.0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'김송환',c:5,p:6,py:3,mc:-1,mr:-16.7},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'박진수',c:11,p:12,py:0,mc:-1,mr:-8.3},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'송차돌',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'오진환',c:7,p:3,py:7,mc:4,mr:133.3},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'장광웅',c:8,p:8,py:5,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'천호진',c:0,p:1,py:3,mc:-1,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'홍성초',c:0,p:4,py:1,mc:-4,mr:0},
+{z:'엠파크허브',s:'(주)드림오토상사',d:'김윤호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'김승환',c:23,p:25,py:12,mc:-2,mr:-8.0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'김태환',c:0,p:1,py:2,mc:-1,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'나상훈',c:4,p:2,py:2,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'박대훈',c:2,p:5,py:4,mc:-3,mr:-60.0},
+{z:'엠파크허브',s:'(주)에스에이치모터스',d:'김은창',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김경신',c:4,p:2,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김수종',c:2,p:3,py:2,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김윤태',c:7,p:7,py:2,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김인영',c:4,p:2,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'박기동',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'박성환',c:13,p:18,py:0,mc:-5,mr:-27.8},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이부길',c:3,p:3,py:2,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'장호성',c:17,p:10,py:4,mc:7,mr:70.0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'천일권',c:5,p:8,py:0,mc:-3,mr:-37.5},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'김현준',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이상준',c:2,p:5,py:0,mc:-3,mr:-60.0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'박정민',c:7,p:13,py:0,mc:-6,mr:-46.2},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'이호근',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'편도열',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)에이엠지모터스',d:'황정대',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'김상철',c:45,p:54,py:56,mc:-9,mr:-16.7},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'정희진',c:6,p:5,py:5,mc:1,mr:20.0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'홍덕호',c:0,p:3,py:4,mc:-3,mr:0},
+{z:'엠파크허브',s:'(주)엔젤모터스',d:'박세영',c:2,p:3,py:0,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'(주)오토위드',d:'임병준',c:2,p:5,py:5,mc:-3,mr:-60.0},
+{z:'엠파크허브',s:'(주)오토위드',d:'장동호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)오토위드',d:'하현우',c:2,p:1,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'김성진',c:3,p:5,py:6,mc:-2,mr:-40.0},
+{z:'엠파크허브',s:'(주)제이파크',d:'박명기',c:42,p:67,py:73,mc:-25,mr:-37.3},
+{z:'엠파크허브',s:'(주)제이파크',d:'윤준영',c:10,p:14,py:11,mc:-4,mr:-28.6},
+{z:'엠파크허브',s:'(주)제이파크',d:'이학준',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'정탁영',c:0,p:1,py:2,mc:-1,mr:0},
+{z:'엠파크허브',s:'(주)제이파크',d:'주영환',c:2,p:3,py:3,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'(주)제이파크',d:'이훈재',c:3,p:2,py:0,mc:1,mr:50.0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'권수영',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김승환',c:3,p:1,py:5,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김학현',c:25,p:38,py:18,mc:-13,mr:-34.2},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'류지훈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'문해원',c:2,p:1,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'박지훈',c:2,p:1,py:4,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'유흥민',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'윤재호',c:2,p:2,py:3,mc:0,mr:0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'장준호',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'정혜정',c:4,p:7,py:5,mc:-3,mr:-42.9},
+{z:'엠파크허브',s:'(주)카스갤러리',d:'김기욱',c:3,p:6,py:0,mc:-3,mr:-50.0},
+{z:'엠파크허브',s:'(주)탁월한선택',d:'박창수',c:0,p:5,py:0,mc:-5,mr:0},
+{z:'엠파크허브',s:'(주)탁월한선택',d:'장수희',c:1,p:47,py:18,mc:-46,mr:-97.9},
+{z:'엠파크허브',s:'굿카대표 모터스',d:'장현구',c:47,p:44,py:98,mc:3,mr:6.8},
+{z:'엠파크허브',s:'굿카대표 모터스',d:'조용성',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'디에이치모터스',d:'김동호',c:17,p:16,py:22,mc:1,mr:6.2},
+{z:'엠파크허브',s:'디에이치모터스',d:'신정현',c:6,p:16,py:10,mc:-10,mr:-62.5},
+{z:'엠파크허브',s:'디에이치모터스',d:'정순덕',c:2,p:4,py:4,mc:-2,mr:-50.0},
+{z:'엠파크허브',s:'디에이치모터스',d:'최동석',c:2,p:4,py:2,mc:-2,mr:-50.0},
+{z:'엠파크허브',s:'에이치투모터스',d:'김정한',c:3,p:3,py:2,mc:0,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'박주필',c:1,p:1,py:1,mc:0,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'임용순',c:3,p:3,py:3,mc:0,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'임태범',c:0,p:2,py:1,mc:-2,mr:0},
+{z:'엠파크허브',s:'에이치투모터스',d:'하기호',c:5,p:6,py:6,mc:-1,mr:-16.7},
+{z:'엠파크허브',s:'에이치투모터스',d:'황세주',c:3,p:6,py:13,mc:-3,mr:-50.0},
+{z:'엠파크허브',s:'오토팰리스',d:'김동남',c:7,p:2,py:3,mc:5,mr:250.0},
+{z:'엠파크허브',s:'오토팰리스',d:'박건',c:4,p:2,py:3,mc:2,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'박종익',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'안정현',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'여용진',c:16,p:6,py:14,mc:10,mr:166.7},
+{z:'엠파크허브',s:'오토팰리스',d:'이호철',c:6,p:2,py:1,mc:4,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'임낙문',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'조명준',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'오토팰리스',d:'차현두',c:7,p:2,py:1,mc:5,mr:250.0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'권윤숙',c:13,p:8,py:20,mc:5,mr:62.5},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'김도진',c:0,p:2,py:7,mc:-2,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'노경환',c:1,p:3,py:8,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박상수',c:3,p:8,py:0,mc:-5,mr:-62.5},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박형윤',c:13,p:8,py:14,mc:5,mr:62.5},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'박훈희',c:1,p:3,py:4,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'서근용',c:9,p:10,py:11,mc:-1,mr:-10.0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'서소영',c:12,p:11,py:10,mc:1,mr:9.1},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'성주남',c:8,p:12,py:12,mc:-4,mr:-33.3},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'원은희',c:1,p:1,py:3,mc:0,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이은희',c:4,p:3,py:4,mc:1,mr:33.3},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이혁재',c:0,p:4,py:2,mc:-4,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'이후병',c:1,p:1,py:5,mc:0,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'임수훈',c:3,p:4,py:5,mc:-1,mr:-25.0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'전방용',c:2,p:2,py:3,mc:0,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'조군희',c:13,p:13,py:12,mc:0,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'최영석',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'최종수',c:6,p:3,py:14,mc:3,mr:0},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'황의진',c:16,p:15,py:20,mc:1,mr:6.7},
+{z:'엠파크허브',s:'오토허브 엠파크지점',d:'구자욱',c:7,p:13,py:0,mc:-6,mr:-46.2},
+{z:'엠파크허브',s:'올바른자동차',d:'고정호',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'권오준',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'김현수',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'올바른자동차',d:'이인호',c:9,p:10,py:23,mc:-1,mr:-10.0},
+{z:'엠파크허브',s:'올바른자동차',d:'정영호',c:12,p:5,py:13,mc:7,mr:140.0},
+{z:'엠파크허브',s:'올바른자동차',d:'최경준',c:27,p:26,py:40,mc:1,mr:3.8},
+{z:'엠파크허브',s:'올바른자동차',d:'최남석',c:1,p:1,py:3,mc:0,mr:0},
+{z:'엠파크허브',s:'이룰',d:'TRAN DANG HANH',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'이룰',d:'이해성',c:18,p:12,py:14,mc:6,mr:50.0},
+{z:'엠파크허브',s:'잘팔카',d:'정원석',c:51,p:42,py:33,mc:9,mr:21.4},
+{z:'엠파크허브',s:'잘팔카',d:'최준기',c:6,p:7,py:0,mc:-1,mr:-14.3},
+{z:'엠파크허브',s:'주식회사 누리모터스',d:'유용현',c:9,p:15,py:13,mc:-6,mr:-40.0},
+{z:'엠파크허브',s:'주식회사 누리모터스',d:'최성호',c:8,p:5,py:2,mc:3,mr:60.0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'권영인',c:11,p:17,py:38,mc:-6,mr:-35.3},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'엄정수',c:11,p:4,py:12,mc:7,mr:175.0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'유승현',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'유종찬',c:14,p:20,py:16,mc:-6,mr:-30.0},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'이학주',c:48,p:39,py:68,mc:9,mr:23.1},
+{z:'엠파크허브',s:'주식회사 시우자동차',d:'현화섭',c:5,p:4,py:0,mc:1,mr:25.0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'김기수',c:14,p:10,py:17,mc:4,mr:40.0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'류재원',c:19,p:15,py:21,mc:4,mr:26.7},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'방희조',c:3,p:0,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이관섭',c:19,p:12,py:19,mc:7,mr:58.3},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이종대',c:18,p:18,py:27,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'이진섭',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차2',d:'최태훈',c:23,p:15,py:22,mc:8,mr:53.3},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'김민영',c:18,p:23,py:22,mc:-5,mr:-21.7},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'옥도윤',c:11,p:16,py:17,mc:-5,mr:-31.2},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'이성웅',c:6,p:6,py:14,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 시우자동차3',d:'최가람',c:2,p:1,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'김슬지',c:18,p:15,py:28,mc:3,mr:20.0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'최익준',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'오상빈',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 애니카모터스',d:'김태우',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'오광석',c:7,p:9,py:10,mc:-2,mr:-22.2},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'전우용',c:9,p:14,py:15,mc:-5,mr:-35.7},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'전우일',c:16,p:19,py:18,mc:-3,mr:-15.8},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'정상돈',c:3,p:0,py:3,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'조민석',c:15,p:9,py:14,mc:6,mr:66.7},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'한솔',c:3,p:3,py:7,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'한인복',c:1,p:2,py:0,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'주식회사 용일상사',d:'김재헌',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'고경민',c:7,p:8,py:38,mc:-1,mr:-12.5},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'김석범',c:0,p:2,py:8,mc:-2,mr:0},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'박상일',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'유성곤',c:1,p:0,py:40,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 지후모터스',d:'장지용',c:3,p:5,py:12,mc:-2,mr:-40.0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김기남',c:4,p:3,py:6,mc:1,mr:33.3},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김기철',c:8,p:11,py:13,mc:-3,mr:-27.3},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김동혁',c:4,p:1,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'김지철',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'남동현',c:3,p:11,py:5,mc:-8,mr:-72.7},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'박상희',c:5,p:7,py:8,mc:-2,mr:-28.6},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'박종원',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'백웅준',c:6,p:3,py:4,mc:3,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'심재웅',c:4,p:2,py:2,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'유철',c:0,p:1,py:1,mc:-1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'윤성균',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'이승훈',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'이홍재',c:6,p:9,py:0,mc:-3,mr:-33.3},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'장태호',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'정일호',c:2,p:1,py:4,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'진경화',c:4,p:5,py:10,mc:-1,mr:-20.0},
+{z:'엠파크허브',s:'주식회사 진모터스',d:'진상규',c:1,p:1,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'김지연',c:4,p:5,py:0,mc:-1,mr:-20.0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'윤일섭',c:5,p:0,py:10,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'이윤아',c:2,p:4,py:0,mc:-2,mr:-50.0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'이재혁',c:0,p:2,py:8,mc:-2,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'임종빈',c:3,p:2,py:11,mc:1,mr:50.0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'임화영',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'정윤방',c:3,p:2,py:1,mc:1,mr:50.0},
+{z:'엠파크허브',s:'주식회사 혜안모터스',d:'최재호',c:6,p:6,py:9,mc:0,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'김승곤',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'이대근',c:2,p:3,py:7,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'진솔모터스',d:'이영규',c:1,p:0,py:2,mc:1,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'이창훈',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'진솔모터스',d:'장미희',c:5,p:4,py:0,mc:1,mr:25.0},
+{z:'엠파크허브',s:'진솔모터스',d:'정수용',c:9,p:2,py:0,mc:7,mr:350.0},
+{z:'엠파크허브',s:'진솔모터스',d:'주진호',c:1,p:3,py:3,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'카누리모터스',d:'김영천',c:2,p:0,py:5,mc:2,mr:0},
+{z:'엠파크허브',s:'카누리모터스',d:'임현정',c:37,p:41,py:36,mc:-4,mr:-9.8},
+{z:'엠파크허브',s:'카누리모터스',d:'정대용',c:3,p:0,py:4,mc:3,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'박건오',c:7,p:6,py:11,mc:1,mr:16.7},
+{z:'엠파크허브',s:'카담파트너스',d:'방지욱',c:10,p:12,py:16,mc:-2,mr:-16.7},
+{z:'엠파크허브',s:'카담파트너스',d:'이경동',c:16,p:1,py:0,mc:15,mr:0},
+{z:'엠파크허브',s:'카담파트너스',d:'임근혁',c:7,p:3,py:0,mc:4,mr:133.3},
+{z:'엠파크허브',s:'카담파트너스',d:'장원혁',c:7,p:4,py:3,mc:3,mr:75.0},
+{z:'엠파크허브',s:'케이모터스',d:'고영배',c:2,p:3,py:11,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'케이모터스',d:'김경준',c:12,p:11,py:32,mc:1,mr:9.1},
+{z:'엠파크허브',s:'케이모터스',d:'김지철',c:4,p:3,py:0,mc:1,mr:33.3},
+{z:'엠파크허브',s:'케이모터스',d:'라석주',c:0,p:2,py:3,mc:-2,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'신현진',c:1,p:0,py:5,mc:1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'유인환',c:0,p:1,py:5,mc:-1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이원석',c:1,p:0,py:20,mc:1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이성복',c:1,p:7,py:0,mc:-6,mr:-85.7},
+{z:'엠파크허브',s:'케이모터스',d:'이승우',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'케이모터스',d:'이성욱',c:1,p:3,py:0,mc:-2,mr:-66.7},
+{z:'엠파크허브',s:'패밀리카',d:'김준식',c:1,p:13,py:7,mc:-12,mr:-92.3},
+{z:'엠파크허브',s:'패밀리카',d:'송민준',c:5,p:10,py:7,mc:-5,mr:-50.0},
+{z:'엠파크허브',s:'패밀리카',d:'심용보',c:1,p:2,py:2,mc:-1,mr:-50.0},
+{z:'엠파크허브',s:'패밀리카',d:'허석민',c:5,p:6,py:0,mc:-1,mr:-16.7},
+{z:'엠파크허브',s:'패밀리카',d:'서경환',c:5,p:1,py:0,mc:4,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'NGUYEN HUY CANH',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'김정훈',c:1,p:8,py:0,mc:-7,mr:-87.5},
+{z:'엠파크허브',s:'필승모터스',d:'손승길',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'필승모터스',d:'신윤재',c:6,p:4,py:0,mc:2,mr:50.0},
+{z:'엠파크허브',s:'필승모터스',d:'조경연',c:5,p:9,py:0,mc:-4,mr:-44.4},
+{z:'엠파크허브',s:'필승모터스',d:'박제민',c:0,p:2,py:0,mc:-2,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'김광식',c:3,p:3,py:2,mc:0,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'윤종석',c:2,p:3,py:5,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'이재호',c:2,p:1,py:3,mc:1,mr:0},
+{z:'엠파크허브',s:'한성자동차(주)인천인증중고차사업부',d:'정병욱',c:3,p:5,py:2,mc:-2,mr:-40.0},
+{z:'엠파크허브',s:'왓차중고차',d:'김선철',c:3,p:3,py:4,mc:0,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'김창수',c:0,p:6,py:9,mc:-6,mr:0},
+{z:'엠파크허브',s:'왓차중고차',d:'전준우',c:4,p:3,py:6,mc:1,mr:33.3},
+{z:'엠파크허브',s:'왓차중고차',d:'최민규',c:9,p:6,py:0,mc:3,mr:50.0},
+{z:'엠파크허브',s:'왓차중고차',d:'김영찬',c:6,p:5,py:0,mc:1,mr:20.0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'강병우',c:1,p:7,py:5,mc:-6,mr:-85.7},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김승광',c:2,p:0,py:1,mc:2,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김용문',c:17,p:23,py:14,mc:-6,mr:-26.1},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'김용태',c:18,p:20,py:32,mc:-2,mr:-10.0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'서근덕',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'서준석',c:20,p:22,py:13,mc:-2,mr:-9.1},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'송우진',c:9,p:6,py:0,mc:3,mr:50.0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'이지오',c:4,p:4,py:1,mc:0,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'최용은',c:8,p:6,py:0,mc:2,mr:33.3},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'이성호',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'와이티모터스 주식회사',d:'이재홍',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'곽중석',c:4,p:4,py:6,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'김영균',c:10,p:11,py:12,mc:-1,mr:-9.1},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'이동주',c:9,p:6,py:0,mc:3,mr:50.0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'임태현',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'허대선',c:23,p:19,py:21,mc:4,mr:21.1},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'신정훈',c:2,p:6,py:0,mc:-4,mr:-66.7},
+{z:'엠파크허브',s:'주식회사 모터바겐',d:'표성민',c:5,p:0,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'김경진',c:13,p:3,py:4,mc:10,mr:333.3},
+{z:'엠파크허브',s:'와이비모터스',d:'김진',c:0,p:1,py:6,mc:-1,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'박강훈',c:6,p:6,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'심수정',c:1,p:0,py:3,mc:1,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'안소정',c:5,p:7,py:21,mc:-2,mr:-28.6},
+{z:'엠파크허브',s:'와이비모터스',d:'우상현',c:16,p:15,py:4,mc:1,mr:6.7},
+{z:'엠파크허브',s:'와이비모터스',d:'이구',c:1,p:1,py:6,mc:0,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'이상우',c:2,p:1,py:5,mc:1,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'이재우',c:10,p:17,py:1,mc:-7,mr:-41.2},
+{z:'엠파크허브',s:'와이비모터스',d:'조용준',c:0,p:3,py:0,mc:-3,mr:0},
+{z:'엠파크허브',s:'와이비모터스',d:'최홍석',c:4,p:1,py:0,mc:3,mr:0},
+{z:'엠파크허브',s:'차본주의',d:'조원기',c:4,p:15,py:6,mc:-11,mr:-73.3},
+{z:'엠파크허브',s:'차본주의',d:'최승현',c:10,p:16,py:13,mc:-6,mr:-37.5},
+{z:'엠파크허브',s:'차본주의',d:'장지호',c:2,p:7,py:0,mc:-5,mr:-71.4},
+{z:'엠파크허브',s:'차본주의',d:'윤보석',c:3,p:3,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'이레카',d:'민춘기',c:11,p:7,py:6,mc:4,mr:57.1},
+{z:'엠파크허브',s:'이레카',d:'주진우',c:3,p:1,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'이레카',d:'박정민',c:0,p:1,py:0,mc:-1,mr:0},
+{z:'엠파크허브',s:'이레카',d:'이성경',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'에스엠모터스',d:'강선우',c:1,p:0,py:1,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'김석범',c:8,p:0,py:0,mc:8,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'김은경',c:10,p:5,py:0,mc:5,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'유성곤',c:23,p:22,py:1,mc:1,mr:4.5},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'조성동',c:19,p:22,py:0,mc:-3,mr:-13.6},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'허창현',c:1,p:4,py:0,mc:-3,mr:-75.0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'홍성윤',c:11,p:3,py:0,mc:8,mr:266.7},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'남선순',c:2,p:0,py:0,mc:2,mr:0},
+{z:'엠파크허브',s:'주식회사 유케이모터스',d:'이계련',c:1,p:7,py:0,mc:-6,mr:-85.7},
+{z:'엠파크허브',s:'주식회사 차들',d:'신재훈',c:8,p:8,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 차들',d:'천승환',c:15,p:14,py:0,mc:1,mr:7.1},
+{z:'엠파크허브',s:'주식회사 차들',d:'이대환',c:6,p:8,py:0,mc:-2,mr:-25.0},
+{z:'엠파크허브',s:'주식회사 차들',d:'이상민',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 도담',d:'김채현',c:7,p:5,py:0,mc:2,mr:40.0},
+{z:'엠파크허브',s:'주식회사 도담',d:'김우연',c:10,p:13,py:0,mc:-3,mr:-23.1},
+{z:'엠파크허브',s:'주식회사 도담',d:'장재순',c:2,p:3,py:0,mc:-1,mr:-33.3},
+{z:'엠파크허브',s:'주식회사 도담',d:'노한철',c:0,p:4,py:0,mc:-4,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'박진남',c:2,p:2,py:0,mc:0,mr:0},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'이범희',c:7,p:6,py:0,mc:1,mr:16.7},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'황윤모',c:5,p:8,py:0,mc:-3,mr:-37.5},
+{z:'엠파크허브',s:'주식회사 에이더블유컴퍼니',d:'김대하',c:8,p:10,py:0,mc:-2,mr:-20.0},
+{z:'엠파크허브',s:'주식회사 차탐',d:'유경원',c:4,p:6,py:0,mc:-2,mr:-33.3},
+{z:'엠파크허브',s:'주식회사 차탐',d:'신상훈',c:1,p:0,py:0,mc:1,mr:0},
+{z:'엠파크허브',s:'주식회사 오토카인드',d:'최용운',c:36,p:7,py:0,mc:29,mr:414.3}];
+
+const TREND_LABELS = ['25.01','25.02','25.03','25.04','25.05','25.06','25.07','25.08','25.09','25.10','25.11','25.12','26.01','26.02'];
+const TREND_AUTOLOAN = [1164,1254,1356,1353,1120,1222,1454,1339,1427,1088,1094,1238,1195,1097];
+const TREND_SELL     = [4516,5591,5693,5149,4632,4711,5661,5089,5973,4263,4535,4644,4437,4150];
+
+// ── 차트 ──
+(function(){
+  const sorted = [...YEOSIN].filter(d=>d.c>0).sort((a,b)=>b.c-a.c).slice(0,15);
+  const colors = sorted.map(d => d.c>=100?'#004d1f':d.c>=50?'#2e8b57':'#74b988');
+  new Chart(document.getElementById('yeosinChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:sorted.map(d=>d.name),datasets:[
+      {label:'당월',data:sorted.map(d=>d.c),backgroundColor:colors,borderRadius:4,borderSkipped:false},
+      {label:'전월',data:sorted.map(d=>d.p),backgroundColor:'rgba(100,116,139,0.15)',borderRadius:4,borderSkipped:false}
+    ]},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{color:'#5a7060',usePointStyle:true,font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()}건`}}
+      },
+      scales:{
+        x:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5a7060',font:{size:10}}},
+        y:{grid:{display:false},ticks:{color:'#1a2e1a',font:{size:11}}}
+      }
+    }
+  });
+})();
+
+(function(){
+  new Chart(document.getElementById('trendChart').getContext('2d'),{
+    type:'line',
+    data:{labels:TREND_LABELS,datasets:[
+      {label:'오토론 건수',data:TREND_AUTOLOAN,borderColor:'#004d1f',backgroundColor:'rgba(0,77,31,0.07)',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,fill:true,tension:0.35,yAxisID:'y'},
+      {label:'전체 매도대수',data:TREND_SELL,borderColor:'#2e8b57',backgroundColor:'rgba(46,139,87,0.06)',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,fill:true,tension:0.35,yAxisID:'y2'}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',labels:{color:'#5a7060',usePointStyle:true,font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5a7060',font:{size:10}}},
+        y:{position:'left',beginAtZero:false,grid:{color:'rgba(0,0,0,0.05)'},
+          ticks:{color:'#004d1f',font:{size:10},callback:v=>v.toLocaleString()},
+          title:{display:true,text:'오토론(건)',color:'#004d1f',font:{size:10}}},
+        y2:{position:'right',beginAtZero:false,grid:{display:false},
+          ticks:{color:'#2e8b57',font:{size:10},callback:v=>v.toLocaleString()},
+          title:{display:true,text:'매도(대)',color:'#2e8b57',font:{size:10}}}
+      }
+    }
+  });
+})();
+
+// ── 여신사 상세 테이블 ──
+(function(){
+  const total = YEOSIN.reduce((s,d)=>s+d.c,0);
+  const sorted = [...YEOSIN].sort((a,b)=>b.c-a.c);
+  document.getElementById('yeosinBody').innerHTML = sorted.map(row=>{
+    const share = total>0?(row.c/total*100):0;
+    const mc = row.mc>0?'td-pos':row.mc<0?'td-neg':'td-neu';
+    const yc = row.yc>0?'td-pos':row.yc<0?'td-neg':'td-neu';
+    const mrS = row.p===0?'-':`${row.mr>0?'+':''}${row.mr.toFixed(1)}%`;
+    const yrS = row.py===0?'-':`${row.yr>0?'+':''}${row.yr.toFixed(1)}%`;
+    return `<tr>
+      <td><strong>${row.name}</strong></td>
+      <td class="num-right"><strong>${row.c}</strong></td>
+      <td class="num-right">${row.p}</td>
+      <td class="num-right">${row.py}</td>
+      <td class="num-right ${mc}">${row.mc>0?'+':''}${row.mc}</td>
+      <td class="num-right ${mc}">${mrS}</td>
+      <td class="num-right ${yc}">${row.yc>0?'+':''}${row.yc}</td>
+      <td class="num-right ${yc}">${yrS}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(share,100)}%"></div></div>
+        <span style="font-size:0.72rem;color:#5a7060">${share.toFixed(1)}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+})();
+
+// ── 상사별 테이블 렌더 ──
+function renderSangsaTable(bodyId, data, total){
+  document.getElementById(bodyId).innerHTML = data.map(row=>{
+    const ratio = total>0?(row.c/total*100):0;
+    const mc = row.mc>0?'td-pos':row.mc<0?'td-neg':'td-neu';
+    const ms = `${row.mc>0?'+':''}${row.mc}`;
+    const mrS = row.p===0&&!row.isZ?'-':`${row.mr>0?'+':''}${row.mr.toFixed(1)}%`;
+    return `<tr class="${row.isZ?'zone-row':''}">
+      <td>${row.name}</td>
+      <td class="num-right">${row.c.toLocaleString()}</td>
+      <td class="num-right">${row.p.toLocaleString()}</td>
+      <td class="num-right">${(row.py||0).toLocaleString()}</td>
+      <td class="num-right ${mc}">${ms}</td>
+      <td class="num-right ${mc}">${mrS}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(ratio,100)}%"></div></div>
+        <span style="font-size:0.72rem;color:#5a7060">${ratio.toFixed(1)}%</span>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+renderSangsaTable('sangsaJeisiBody', SANGSA_JEISI, 4385);
+renderSangsaTable('sangsaMaedoBody', SANGSA_MAEDO, 4150);
+
+// ── 딜러별 페이지네이션 ──
+const PAGE_SIZE = 50;
+const dealerState = {
+  jeisi: { data: DEALER_JEISI, filtered: DEALER_JEISI, page: 0 },
+  maedo: { data: DEALER_MAEDO, filtered: DEALER_MAEDO, page: 0 }
+};
+
+function renderDealerTable(type){
+  const st = dealerState[type];
+  const start = st.page * PAGE_SIZE;
+  const slice = st.filtered.slice(start, start+PAGE_SIZE);
+  const bodyEl = document.getElementById(`dealer${type==='jeisi'?'Jeisi':'Maedo'}Body`);
+  bodyEl.innerHTML = slice.map(row=>{
+    const mc = row.mc>0?'td-pos':row.mc<0?'td-neg':'td-neu';
+    const mrS = row.mr===0&&row.p===0?'-':`${row.mr>0?'+':''}${row.mr}%`;
+    return `<tr>
+      <td>${row.z}</td><td>${row.s}</td><td>${row.d}</td>
+      <td class="num-right">${row.c}</td>
+      <td class="num-right">${row.p}</td>
+      <td class="num-right">${row.py}</td>
+      <td class="num-right ${mc}">${row.mc>0?'+':''}${row.mc}</td>
+      <td class="num-right ${mc}">${mrS}</td>
+    </tr>`;
+  }).join('');
+
+  const total = st.filtered.length;
+  const totalPages = Math.ceil(total/PAGE_SIZE);
+  const pagId = `dealer${type==='jeisi'?'Jeisi':'Maedo'}Pag`;
+  const infoId = `dealer${type==='jeisi'?'Jeisi':'Maedo'}Info`;
+  const pagEl = document.getElementById(pagId);
+
+  let pgHtml = '';
+  if(st.page>0) pgHtml += `<button class="pg-btn" onclick="goPage('${type}',${st.page-1})">◀ 이전</button>`;
+  const startP = Math.max(0, st.page-2);
+  const endP = Math.min(totalPages-1, st.page+2);
+  for(let i=startP;i<=endP;i++){
+    pgHtml += `<button class="pg-btn${i===st.page?' active':''}" onclick="goPage('${type}',${i})">${i+1}</button>`;
+  }
+  if(st.page<totalPages-1) pgHtml += `<button class="pg-btn" onclick="goPage('${type}',${st.page+1})">다음 ▶</button>`;
+  pagEl.innerHTML = pgHtml;
+  document.getElementById(infoId).textContent = `총 ${total.toLocaleString()}명 중 ${start+1}~${Math.min(start+PAGE_SIZE,total)}번째 표시`;
+}
+
+function goPage(type, page){
+  dealerState[type].page = page;
+  renderDealerTable(type);
+}
+
+function filterDealer(type){
+  const id = `dealer${type==='jeisi'?'Jeisi':'Maedo'}Search`;
+  const kw = document.getElementById(id).value.toLowerCase();
+  dealerState[type].filtered = kw
+    ? dealerState[type].data.filter(r=>r.s.toLowerCase().includes(kw)||r.d.toLowerCase().includes(kw))
+    : dealerState[type].data;
+  dealerState[type].page = 0;
+  renderDealerTable(type);
+}
+
+renderDealerTable('jeisi');
+renderDealerTable('maedo');
+
+// ── 탭 전환 ──
+function showTab(group, tab, btn){
+  const tabs = ['jeisi','maedo'];
+  tabs.forEach(t=>{
+    const el = document.getElementById(`${group}-tab-${t}`);
+    if(el) el.style.display = t===tab?'block':'none';
+  });
+  btn.closest('.section').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── 테이블 정렬 ──
+function sortTbl(tableId, colIdx, isNum){
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  let asc = table._col===colIdx ? !table._asc : false;
+  table._col=colIdx; table._asc=asc;
+  rows.sort((a,b)=>{
+    const av = (a.cells[colIdx]?.innerText||'').replace(/[^0-9.\-]/g,'');
+    const bv = (b.cells[colIdx]?.innerText||'').replace(/[^0-9.\-]/g,'');
+    if(isNum) return asc ? parseFloat(av||0)-parseFloat(bv||0) : parseFloat(bv||0)-parseFloat(av||0);
+    return asc ? av.localeCompare(bv,'ko') : bv.localeCompare(av,'ko');
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+}
+</script>
+</body>
+</html>
