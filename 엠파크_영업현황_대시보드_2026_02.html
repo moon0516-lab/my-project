@@ -6,148 +6,292 @@
   <title>엠파크 영업현황 대시보드 | 2026년 2월</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
   <style>
+    /* ─────────────────────────────────────────────────────────────
+       M-PARK CI × Monocharts Design Language
+       - 60(Off-White) / 30(Doc Gray) / 10(M-Park Green) 비율 준수
+       - 카드: 라운드 컨테이너 → 내부 stage 캔버스 → mono 푸터 메타
+       ───────────────────────────────────────────────────────────── */
     :root {
-      --bg-base: #f2f5f2;
-      --bg-card: #ffffff;
-      --bg-card2: #f7faf7;
-      --bg-header: #004d1f;
-      --bg-tab-active: #e6f2ea;
-      --border: #d8e8d8;
-      --text-primary: #1a2e1a;
-      --text-secondary: #5a7060;
-      --text-dim: #9ab09a;
-      --green-dark: #004d1f;
-      --green-mid: #2e8b57;
-      --green-light: #74b988;
-      --positive: #15803d;
-      --negative: #dc2626;
-      --neutral: #6b7280;
-      --gap: 14px;
-      --radius: 10px;
+      /* Dominant 60% — 배경 */
+      --bg-base:#f8f9fa;
+      --bg-card:#ffffff;
+      --stage:#f4f4f6;
+      --stripe:#f9fafb;
+
+      /* Secondary 30% — 구조 & 본문 */
+      --text:#54585a;          /* PANTONE 425 C */
+      --text-mute:#8c8f91;     /* Cool Gray 7 C */
+      --text-faint:#a9acae;
+      --border:#e9ebec;
+      --border-strong:#c1c4c6; /* Cool Gray 4 C */
+
+      /* Brand 10% — 엠파크 메인 */
+      --green:#00573f;         /* PANTONE 7484 C */
+      --green-mid:#2e7d63;
+      --green-soft:#d1e0d7;    /* PANTONE 621 C */
+      --mint:#a0d1ca;          /* PANTONE 7464 C */
+      --accent:#d4a373;        /* PANTONE 2309 C */
+
+      --positive:#15803d;
+      --negative:#c0392b;
+      --neutral:#8c8f91;
+
+      --gap:14px;
+      --r-card:20px;
+      --r-stage:14px;
+      --r-pill:999px;
+      --shadow:0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+      --shadow-hover:0 6px 24px rgba(0,0,0,0.07);
+      --font-mono:ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     html { font-size:14px; }
     body {
-      font-family: 'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-      background: var(--bg-base);
-      color: var(--text-primary);
-      line-height: 1.5;
-      min-height: 100vh;
+      font-family:'Malgun Gothic','맑은 고딕','Pretendard','Apple SD Gothic Neo',
+                  Inter,'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+      background:var(--bg-base);
+      color:var(--text);
+      line-height:1.65;
+      letter-spacing:-0.01em;
+      -webkit-font-smoothing:antialiased;
+      min-height:100vh;
     }
-    .wrap { max-width:1300px; margin:0 auto; padding:16px; }
+    .wrap { max-width:1300px; margin:0 auto; padding:20px 16px 8px; }
 
-    /* 헤더 */
+    /* 공통 카드 컨테이너 */
+    .card {
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:var(--r-card);
+      box-shadow:var(--shadow);
+      transition:box-shadow .3s cubic-bezier(.16,1,.3,1);
+    }
+    .card:hover { box-shadow:var(--shadow-hover); }
+
+    /* Pill 뱃지 */
+    .pill {
+      display:inline-flex; align-items:center;
+      padding:2px 10px; border-radius:var(--r-pill);
+      font-family:var(--font-mono); font-size:0.68rem; font-weight:600;
+      letter-spacing:0; white-space:nowrap;
+      background:var(--green-soft); color:var(--green);
+    }
+    .pill.pos { background:#e3f2e8; color:var(--positive); }
+    .pill.neg { background:#fbeceb; color:var(--negative); }
+    .pill.warn { background:rgba(212,163,115,0.18); color:#a2703c; }
+
+    /* ── 헤더 : 다크그린 도배 대신 그린 액센트 마커 적용 ── */
     .header {
-      background: var(--bg-header);
-      border-radius: var(--radius);
-      padding: 18px 24px;
-      margin-bottom: var(--gap);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
+      position:relative; overflow:hidden;
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:var(--r-card);
+      box-shadow:var(--shadow);
+      padding:20px 26px 20px 30px;
+      margin-bottom:var(--gap);
+      display:flex; justify-content:space-between; align-items:center;
+      flex-wrap:wrap; gap:10px;
     }
-    .header-left h1 { font-size:1.3rem; font-weight:700; color:#fff; letter-spacing:-0.3px; }
-    .header-left .sub { font-size:0.78rem; color:rgba(255,255,255,0.65); margin-top:2px; }
-    .badge { background:#2e8b57; color:#fff; font-size:0.72rem; font-weight:700; padding:4px 12px; border-radius:20px; }
+    .header::before {
+      content:''; position:absolute; left:0; top:0; bottom:0;
+      width:5px; background:var(--green);
+    }
+    .header-left h1 {
+      font-size:1.3rem; font-weight:700; color:var(--green); letter-spacing:-0.4px; line-height:1.35;
+    }
+    .header-left .sub {
+      font-size:0.76rem; color:var(--text-mute); margin-top:3px; letter-spacing:0;
+    }
+    .badge {
+      background:var(--green-soft); color:var(--green);
+      font-size:0.7rem; font-weight:700; padding:5px 14px; border-radius:var(--r-pill);
+      font-family:var(--font-mono); letter-spacing:0;
+    }
 
-    /* KPI */
-    .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); margin-bottom:var(--gap); }
+    /* ── KPI 카드 (Monocharts Stat Card 구조) ── */
+    .kpi-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gap); margin-bottom:var(--gap); }
     .kpi-card {
-      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
-      padding:18px 20px; position:relative; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:var(--r-card);
+      box-shadow:var(--shadow);
+      padding:16px 18px 14px;
+      min-width:0; display:flex; flex-direction:column;
+      transition:box-shadow .3s cubic-bezier(.16,1,.3,1);
     }
-    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--radius) var(--radius) 0 0; }
-    .kpi-card.c1::before { background:#004d1f; }
-    .kpi-card.c2::before { background:#2e8b57; }
-    .kpi-card.c3::before { background:#3a7d44; }
-    .kpi-card.c4::before { background:#1a6b35; }
-    .kpi-label { font-size:0.72rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
-    .kpi-value { font-size:1.9rem; font-weight:800; color:var(--text-primary); line-height:1; margin-bottom:8px; letter-spacing:-1px; }
-    .kpi-value span { font-size:1rem; font-weight:500; color:var(--text-secondary); }
-    .kpi-change { font-size:0.75rem; font-weight:600; }
+    .kpi-card:hover { box-shadow:var(--shadow-hover); }
+    .kpi-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px; }
+    .kpi-label {
+      font-size:0.72rem; font-weight:700; color:var(--text-mute);
+      letter-spacing:0.02em; line-height:1.35;
+    }
+    .kpi-value {
+      font-size:1.85rem; font-weight:800; color:var(--green);
+      line-height:1.15; letter-spacing:-1.2px;
+      font-variant-numeric:tabular-nums; font-feature-settings:'tnum';
+      margin-bottom:6px;
+    }
+    .kpi-value .unit { font-size:0.92rem; font-weight:600; color:var(--text-mute); letter-spacing:0; margin-left:2px; }
+    .kpi-meta { display:flex; flex-direction:column; gap:1px; margin-bottom:10px; }
+    .kpi-change { font-size:0.72rem; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:0; }
     .kpi-change.pos { color:var(--positive); }
     .kpi-change.neg { color:var(--negative); }
 
-    /* 섹션 */
+    /* KPI 내부 stage 캔버스 */
+    .kpi-stage {
+      position:relative; background:var(--stage);
+      border-radius:var(--r-stage);
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.03);
+      height:62px; padding:6px 8px; margin-top:auto;
+    }
+    .kpi-foot {
+      display:flex; align-items:center; justify-content:space-between; gap:6px;
+      margin-top:10px; padding-top:8px; border-top:1px solid var(--border);
+      font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0;
+      color:var(--text-mute); min-width:0;
+    }
+    .kpi-foot > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .kpi-foot .basis { color:var(--text); font-weight:600; white-space:nowrap; }
+
+    /* ── 섹션 카드 ── */
     .section {
-      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
-      padding:20px 22px; margin-bottom:var(--gap); box-shadow:0 1px 4px rgba(0,0,0,0.06);
+      background:var(--bg-card);
+      border:1px solid var(--border);
+      border-radius:var(--r-card);
+      box-shadow:var(--shadow);
+      padding:20px 22px 22px;
+      margin-bottom:var(--gap);
+      transition:box-shadow .3s cubic-bezier(.16,1,.3,1);
     }
+    .section:hover { box-shadow:var(--shadow-hover); }
     .section-title {
-      font-size:0.88rem; font-weight:700; color:var(--text-primary);
-      margin-bottom:16px; display:flex; align-items:center; gap:8px;
+      font-size:0.9rem; font-weight:700; color:var(--text);
+      margin-bottom:16px; padding-bottom:12px;
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:9px; letter-spacing:-0.2px;
     }
-    .section-title .dot { width:8px; height:8px; border-radius:50%; background:var(--green-dark); }
+    .section-title .dot {
+      width:4px; height:15px; border-radius:2px; background:var(--green); flex-shrink:0;
+    }
 
     /* 2열 */
-    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-bottom:var(--gap); }
+    .two-col { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); margin-bottom:var(--gap); }
 
-    /* 차트 */
-    .chart-wrap-tall { position:relative; height:380px; }
+    /* ── 차트 stage ── */
+    .chart-wrap-tall {
+      position:relative; height:380px;
+      background:var(--stage);
+      border-radius:var(--r-stage);
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.03);
+      padding:12px 10px 8px;
+    }
+    .chart-foot {
+      display:flex; align-items:center; justify-content:space-between; gap:6px;
+      margin-top:12px; padding-top:9px; border-top:1px solid var(--border);
+      font-family:var(--font-mono); font-size:0.66rem; letter-spacing:0; color:var(--text-mute);
+    }
+    .chart-foot .basis { color:var(--text); font-weight:600; }
 
-    /* 탭 */
-    .tab-bar { display:flex; gap:6px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+    /* ── 탭 (Pill 그룹) ── */
+    .tab-bar {
+      display:inline-flex; align-items:center; gap:3px;
+      padding:4px; margin-bottom:14px;
+      background:#f1f3f4; border:1px solid var(--border);
+      border-radius:var(--r-pill);
+    }
     .tab-btn {
-      background:var(--bg-card2); border:1px solid var(--border); border-radius:6px;
-      color:var(--text-secondary); font-size:0.78rem; font-weight:600;
-      padding:6px 16px; cursor:pointer; transition:all 0.15s;
+      background:transparent; border:none; border-radius:var(--r-pill);
+      color:var(--text-mute); font-size:0.78rem; font-weight:600;
+      font-family:inherit; padding:6px 18px; cursor:pointer;
+      transition:all .2s cubic-bezier(.16,1,.3,1); letter-spacing:-0.2px;
     }
-    .tab-btn.active { background:var(--bg-tab-active); border-color:#004d1f; color:#004d1f; }
+    .tab-btn:hover { color:var(--text); }
+    .tab-btn.active {
+      background:#fff; color:var(--green); font-weight:700;
+      box-shadow:0 1px 3px rgba(0,0,0,0.10);
+    }
 
-    /* 테이블 */
-    .tbl-scroll { overflow-x:auto; max-height:460px; overflow-y:auto; }
-    .data-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
-    .data-table thead { position:sticky; top:0; z-index:2; background:var(--bg-card2); }
-    .data-table thead th {
-      padding:10px 12px; text-align:left; color:var(--text-secondary);
-      font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.4px;
-      white-space:nowrap; border-bottom:1px solid var(--border); cursor:pointer; user-select:none;
+    /* ── 테이블 ── */
+    .tbl-scroll {
+      overflow-x:auto; max-height:460px; overflow-y:auto;
+      border:1px solid var(--border); border-radius:var(--r-stage);
     }
-    .data-table thead th:hover { color:var(--text-primary); }
-    .data-table tbody td { padding:9px 12px; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
-    .data-table tbody tr:hover { background:#f7faf7; }
+    .data-table {
+      width:100%; border-collapse:separate; border-spacing:0;
+      font-size:0.78rem; font-variant-numeric:tabular-nums;
+    }
+    .data-table thead { position:sticky; top:0; z-index:2; }
+    .data-table thead th {
+      padding:11px 14px; text-align:left;
+      background:var(--green); color:#ffffff;
+      font-weight:700; font-size:0.72rem; letter-spacing:0.02em;
+      white-space:nowrap; cursor:pointer; user-select:none;
+      transition:color .15s;
+    }
+    .data-table thead th:hover { color:var(--mint); }
+    .data-table thead th.num-right { text-align:right; }
+    .data-table tbody td {
+      padding:10px 14px; border-bottom:1px solid #f1f3f4;
+      white-space:nowrap; vertical-align:middle; color:var(--text);
+    }
+    .data-table tbody tr:nth-child(even) td { background:var(--stripe); }
+    .data-table tbody tr:hover td { background:#eef4f0; }
     .data-table tbody tr:last-child td { border-bottom:none; }
     .num-right { text-align:right; }
     .td-pos { color:var(--positive); font-weight:600; }
     .td-neg { color:var(--negative); font-weight:600; }
     .td-neu { color:var(--neutral); }
-    .zone-row td { background:#e6f2ea; font-weight:700; color:#004d1f; }
+    .zone-row td,
+    .data-table tbody tr.zone-row:nth-child(even) td { background:var(--green-soft); font-weight:700; color:var(--green); }
+    .data-table tbody tr.zone-row:hover td { background:#c5d9cd; }
 
-    /* 바 */
-    .bar-bg { background:#d1e9d8; border-radius:4px; height:6px; width:100%; min-width:60px; }
-    .bar-fill { height:6px; border-radius:4px; background:#004d1f; }
+    /* 점유율 바 (Pill) */
+    .bar-bg { background:#e6eae8; border-radius:var(--r-pill); height:6px; width:100%; min-width:60px; overflow:hidden; }
+    .bar-fill { height:6px; border-radius:var(--r-pill); background:var(--green); }
+    .bar-pct { font-family:var(--font-mono); font-size:0.68rem; color:var(--text-mute); min-width:40px; text-align:right; }
 
-    /* 페이지네이션 */
-    .pagination { display:flex; align-items:center; gap:6px; margin-top:12px; flex-wrap:wrap; }
+    /* ── 페이지네이션 ── */
+    .pagination { display:flex; align-items:center; gap:5px; margin-top:14px; flex-wrap:wrap; }
     .pg-btn {
-      background:var(--bg-card2); border:1px solid var(--border); border-radius:6px;
-      color:var(--text-secondary); font-size:0.75rem; padding:4px 10px; cursor:pointer;
+      background:#f1f3f4; border:1px solid var(--border); border-radius:var(--r-pill);
+      color:var(--text-mute); font-size:0.74rem; font-weight:600; font-family:inherit;
+      padding:5px 12px; cursor:pointer; transition:all .2s cubic-bezier(.16,1,.3,1);
     }
-    .pg-btn.active { background:var(--bg-tab-active); border-color:#004d1f; color:#004d1f; font-weight:700; }
-    .pg-info { font-size:0.75rem; color:var(--text-secondary); margin-left:4px; }
+    .pg-btn:hover { color:var(--text); background:#e9ebec; }
+    .pg-btn.active { background:var(--green); border-color:var(--green); color:#fff; font-weight:700; }
+    .pg-info { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-mute); margin-top:8px; letter-spacing:0; }
 
-    /* 검색 */
+    /* ── 검색 ── */
     .search-box {
-      width:100%; padding:7px 12px; border:1px solid var(--border); border-radius:6px;
-      font-size:0.82rem; color:var(--text-primary); background:var(--bg-card2);
-      outline:none; margin-bottom:10px;
+      width:100%; padding:9px 18px;
+      border:1px solid var(--border); border-radius:var(--r-pill);
+      font-size:0.82rem; font-family:inherit; color:var(--text); background:var(--stage);
+      outline:none; margin-bottom:12px; transition:all .2s;
     }
-    .search-box:focus { border-color:#004d1f; }
+    .search-box::placeholder { color:var(--text-faint); }
+    .search-box:focus {
+      border-color:var(--green); background:#fff;
+      box-shadow:0 0 0 3px rgba(0,87,63,0.08);
+    }
 
-    /* 푸터 */
-    .footer { text-align:center; color:var(--text-secondary); font-size:0.72rem; padding:16px 0 8px; }
+    /* ── 푸터 ── */
+    .footer {
+      text-align:center; color:var(--text-mute);
+      font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0;
+      padding:18px 0 12px;
+    }
 
-    /* 반응형 */
+    /* ── 반응형 ── */
     @media (max-width:900px) {
-      .kpi-row { grid-template-columns:repeat(2,1fr); }
-      .two-col { grid-template-columns:1fr; }
+      .kpi-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .two-col { grid-template-columns:minmax(0,1fr); }
     }
     @media (max-width:540px) {
-      .kpi-row { grid-template-columns:1fr 1fr; }
-      .kpi-value { font-size:1.5rem; }
+      .kpi-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .kpi-value { font-size:1.45rem; }
+      .kpi-label { font-size:0.66rem; }
       .header-left h1 { font-size:1rem; }
+      .kpi-foot { font-size:0.58rem; }
     }
   </style>
 </head>
@@ -165,55 +309,88 @@
 
   <!-- KPI 카드 -->
   <div class="kpi-row">
-    <div class="kpi-card c1">
-      <div class="kpi-label">전체 매도대수</div>
-      <div class="kpi-value">4,150<span>대</span></div>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <div class="kpi-label">전체 매도대수</div>
+        <span class="pill neg">-6.5%</span>
+      </div>
+      <div class="kpi-value">4,150<span class="unit">대</span></div>
       <div class="kpi-meta">
         <div class="kpi-change neg">▼ 287대 (-6.5%) 전월比</div>
         <div class="kpi-change neg">▼ 1,441대 (-25.8%) 전년同月</div>
       </div>
+      <div class="kpi-stage"><canvas id="kpiSpark1"></canvas></div>
+      <div class="kpi-foot">
+        <span>전월 4,437 · 전년 5,591</span>
+        <span class="basis">최근 14개월</span>
+      </div>
     </div>
-    <div class="kpi-card c2">
-      <div class="kpi-label">오토론 건수</div>
-      <div class="kpi-value">1,097<span>건</span></div>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <div class="kpi-label">오토론 건수</div>
+        <span class="pill neg">-8.2%</span>
+      </div>
+      <div class="kpi-value">1,097<span class="unit">건</span></div>
       <div class="kpi-meta">
         <div class="kpi-change neg">▼ 98건 (-8.2%) 전월比</div>
         <div class="kpi-change neg">▼ 157건 (-12.5%) 전년同月</div>
       </div>
+      <div class="kpi-stage"><canvas id="kpiSpark2"></canvas></div>
+      <div class="kpi-foot">
+        <span>전월 1,195 · 전년 1,254</span>
+        <span class="basis">최근 14개월</span>
+      </div>
     </div>
-    <div class="kpi-card c3">
-      <div class="kpi-label">오토론 비중</div>
-      <div class="kpi-value">38.2<span>%</span></div>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <div class="kpi-label">오토론 비중</div>
+        <span class="pill neg">-0.9%p</span>
+      </div>
+      <div class="kpi-value">38.2<span class="unit">%</span></div>
       <div class="kpi-meta">
         <div class="kpi-change neg">▼ 0.9%p 전월比 (전월 39.1%)</div>
         <div class="kpi-change pos">▲ 2.5%p 전년同月 (전년 35.8%)</div>
       </div>
+      <div class="kpi-stage"><canvas id="kpiCmp3"></canvas></div>
+      <div class="kpi-foot">
+        <span>전월 39.1% · 전년 35.8%</span>
+        <span class="basis">3개월 비교</span>
+      </div>
     </div>
-    <div class="kpi-card c4">
-      <div class="kpi-label">전체 제시(매입)대수</div>
-      <div class="kpi-value">4,385<span>대</span></div>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <div class="kpi-label">전체 제시(매입)대수</div>
+        <span class="pill neg">-10.2%</span>
+      </div>
+      <div class="kpi-value">4,385<span class="unit">대</span></div>
       <div class="kpi-meta">
         <div class="kpi-change neg">▼ 499대 (-10.2%) 전월比</div>
         <div class="kpi-change neg">▼ 932대 (-17.5%) 전년同月</div>
       </div>
+      <div class="kpi-stage"><canvas id="kpiCmp4"></canvas></div>
+      <div class="kpi-foot">
+        <span>전월 4,884 · 전년 5,317</span>
+        <span class="basis">3개월 비교</span>
+      </div>
     </div>
   </div>
-
   <!-- 여신사별 바 차트 + 월별 트렌드 -->
   <div class="two-col">
     <div class="section">
       <div class="section-title"><span class="dot"></span> 여신사별 오토론 현황 (2026년 2월)</div>
       <div class="chart-wrap-tall"><canvas id="yeosinChart"></canvas></div>
+      <div class="chart-foot"><span>상위 15개사 · 당월 vs 전월</span><span class="basis">단위 : 건</span></div>
     </div>
     <div class="section">
-      <div class="section-title"><span class="dot" style="background:#2e8b57"></span> 월별 트렌드 (오토론 건수 &amp; 매도대수)</div>
+      <div class="section-title"><span class="dot"></span> 월별 트렌드 (오토론 건수 &amp; 매도대수)</div>
       <div class="chart-wrap-tall"><canvas id="trendChart"></canvas></div>
+      <div class="chart-foot"><span>2025.01 ~ 2026.02 (14개월)</span><span class="basis">좌 : 건 / 우 : 대</span></div>
     </div>
   </div>
 
   <!-- ① 여신사별 오토론 상세 현황 -->
   <div class="section">
-    <div class="section-title"><span class="dot" style="background:#1a6b35"></span> 여신사별 오토론 상세 현황</div>
+    <div class="section-title"><span class="dot"></span> 여신사별 오토론 상세 현황</div>
     <div class="tbl-scroll">
       <table class="data-table" id="yeosinTable">
         <thead><tr>
@@ -234,7 +411,7 @@
 
   <!-- ② 상사별 현황 -->
   <div class="section">
-    <div class="section-title"><span class="dot" style="background:#3a7d44"></span> 상사별 현황</div>
+    <div class="section-title"><span class="dot"></span> 상사별 현황</div>
     <div class="tab-bar">
       <button class="tab-btn active" onclick="showTab('sangsa','jeisi',this)">제시(매입) 현황</button>
       <button class="tab-btn" onclick="showTab('sangsa','maedo',this)">매도(판매) 현황</button>
@@ -275,7 +452,7 @@
 
   <!-- ③ 딜러별 현황 -->
   <div class="section">
-    <div class="section-title"><span class="dot" style="background:#2e8b57"></span> 딜러별 현황</div>
+    <div class="section-title"><span class="dot"></span> 딜러별 현황</div>
     <div class="tab-bar">
       <button class="tab-btn active" onclick="showTab('dealer','jeisi',this)">제시(매입) 현황</button>
       <button class="tab-btn" onclick="showTab('dealer','maedo',this)">매도(판매) 현황</button>
@@ -1739,53 +1916,166 @@ const TREND_AUTOLOAN = [1164,1254,1356,1353,1120,1222,1454,1339,1427,1088,1094,1
 const TREND_SELL     = [4516,5591,5693,5149,4632,4711,5661,5089,5973,4263,4535,4644,4437,4150];
 
 // ── 차트 ──
+const MP = {
+  green:'#00573f', greenMid:'#2e7d63', greenSoft:'#d1e0d7',
+  mint:'#a0d1ca', accent:'#d4a373',
+  text:'#54585a', mute:'#8c8f91', grid:'rgba(84,88,90,0.07)'
+};
+const MP_FONT = "'Malgun Gothic','맑은 고딕','Pretendard','Apple SD Gothic Neo',Inter,'Segoe UI',sans-serif";
+
+Chart.defaults.font.family = MP_FONT;
+Chart.defaults.font.size = 10;
+Chart.defaults.color = MP.mute;
+
+// 공통 툴팁 (라운드 카드형)
+const MP_TOOLTIP = {
+  backgroundColor:'#ffffff', titleColor:MP.green, bodyColor:MP.text,
+  borderColor:'#e9ebec', borderWidth:1, cornerRadius:12,
+  padding:10, displayColors:true, usePointStyle:true, boxPadding:4,
+  titleFont:{family:MP_FONT,size:11,weight:'700'},
+  bodyFont:{family:MP_FONT,size:11}
+};
+
+// 세로 그라디언트 페인터
+function mpGradient(ctx, area, hex, topAlpha){
+  if(!area) return 'rgba(0,0,0,0)';
+  const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+  const r = parseInt(hex.slice(1,3),16), gg = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  g.addColorStop(0, `rgba(${r},${gg},${b},${topAlpha})`);
+  g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+  return g;
+}
+
+// ── ① 여신사별 오토론 : 풀 라운드 Pill 바 ──
 (function(){
   const sorted = [...YEOSIN].filter(d=>d.c>0).sort((a,b)=>b.c-a.c).slice(0,15);
-  const colors = sorted.map(d => d.c>=100?'#004d1f':d.c>=50?'#2e8b57':'#74b988');
+  const colors = sorted.map(d => d.c>=100?MP.green : d.c>=50?MP.greenMid : MP.mint);
   new Chart(document.getElementById('yeosinChart').getContext('2d'),{
     type:'bar',
     data:{labels:sorted.map(d=>d.name),datasets:[
-      {label:'당월',data:sorted.map(d=>d.c),backgroundColor:colors,borderRadius:4,borderSkipped:false},
-      {label:'전월',data:sorted.map(d=>d.p),backgroundColor:'rgba(100,116,139,0.15)',borderRadius:4,borderSkipped:false}
+      {label:'당월',data:sorted.map(d=>d.c),backgroundColor:colors,
+       borderRadius:99,borderSkipped:false,barThickness:9},
+      {label:'전월',data:sorted.map(d=>d.p),backgroundColor:'rgba(84,88,90,0.13)',
+       borderRadius:99,borderSkipped:false,barThickness:9}
     ]},
     options:{
       indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      animation:{duration:800,easing:'easeOutQuart'},
+      layout:{padding:{right:6}},
       plugins:{
-        legend:{position:'top',labels:{color:'#5a7060',usePointStyle:true,font:{size:11}}},
-        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()}건`}}
+        legend:{position:'top',align:'end',
+          labels:{color:MP.mute,usePointStyle:true,pointStyle:'circle',boxWidth:6,boxHeight:6,padding:14,font:{size:11}}},
+        tooltip:Object.assign({},MP_TOOLTIP,{callbacks:{label:ctx=>` ${ctx.dataset.label} ${ctx.parsed.x.toLocaleString()}건`}})
       },
       scales:{
-        x:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5a7060',font:{size:10}}},
-        y:{grid:{display:false},ticks:{color:'#1a2e1a',font:{size:11}}}
+        x:{beginAtZero:true,border:{display:false},
+           grid:{color:MP.grid,drawTicks:false},
+           ticks:{color:MP.mute,font:{size:10},padding:6}},
+        y:{border:{display:false},grid:{display:false},
+           ticks:{color:MP.text,font:{size:11},padding:6,crossAlign:'far'}}
       }
     }
   });
 })();
 
+// ── ② 월별 트렌드 : 라운드 캡 라인 + 그라디언트 면 ──
 (function(){
   new Chart(document.getElementById('trendChart').getContext('2d'),{
     type:'line',
     data:{labels:TREND_LABELS,datasets:[
-      {label:'오토론 건수',data:TREND_AUTOLOAN,borderColor:'#004d1f',backgroundColor:'rgba(0,77,31,0.07)',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,fill:true,tension:0.35,yAxisID:'y'},
-      {label:'전체 매도대수',data:TREND_SELL,borderColor:'#2e8b57',backgroundColor:'rgba(46,139,87,0.06)',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,fill:true,tension:0.35,yAxisID:'y2'}
+      {label:'오토론 건수',data:TREND_AUTOLOAN,borderColor:MP.green,
+       backgroundColor:c=>mpGradient(c.chart.ctx,c.chart.chartArea,MP.green,0.20),
+       borderWidth:2.5,borderCapStyle:'round',borderJoinStyle:'round',
+       pointRadius:0,pointHoverRadius:5,pointBackgroundColor:MP.green,pointBorderColor:'#fff',pointBorderWidth:2,
+       fill:true,tension:0.4,yAxisID:'y'},
+      {label:'전체 매도대수',data:TREND_SELL,borderColor:MP.accent,
+       backgroundColor:c=>mpGradient(c.chart.ctx,c.chart.chartArea,MP.accent,0.14),
+       borderWidth:2.5,borderCapStyle:'round',borderJoinStyle:'round',
+       pointRadius:0,pointHoverRadius:5,pointBackgroundColor:MP.accent,pointBorderColor:'#fff',pointBorderWidth:2,
+       fill:true,tension:0.4,yAxisID:'y2'}
     ]},
     options:{
       responsive:true,maintainAspectRatio:false,
+      animation:{duration:900,easing:'easeOutQuart'},
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'top',labels:{color:'#5a7060',usePointStyle:true,font:{size:11}}},
-        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`}}
+        legend:{position:'top',align:'end',
+          labels:{color:MP.mute,usePointStyle:true,pointStyle:'circle',boxWidth:6,boxHeight:6,padding:14,font:{size:11}}},
+        tooltip:Object.assign({},MP_TOOLTIP,{callbacks:{label:ctx=>` ${ctx.dataset.label} ${ctx.parsed.y.toLocaleString()}`}})
       },
       scales:{
-        x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5a7060',font:{size:10}}},
-        y:{position:'left',beginAtZero:false,grid:{color:'rgba(0,0,0,0.05)'},
-          ticks:{color:'#004d1f',font:{size:10},callback:v=>v.toLocaleString()},
-          title:{display:true,text:'오토론(건)',color:'#004d1f',font:{size:10}}},
-        y2:{position:'right',beginAtZero:false,grid:{display:false},
-          ticks:{color:'#2e8b57',font:{size:10},callback:v=>v.toLocaleString()},
-          title:{display:true,text:'매도(대)',color:'#2e8b57',font:{size:10}}}
+        x:{border:{display:false},grid:{color:MP.grid,drawTicks:false},
+           ticks:{color:MP.mute,font:{size:10},padding:6}},
+        y:{position:'left',beginAtZero:false,border:{display:false},
+           grid:{color:MP.grid,drawTicks:false},
+           ticks:{color:MP.green,font:{size:10},padding:6,callback:v=>v.toLocaleString()},
+           title:{display:true,text:'오토론(건)',color:MP.green,font:{size:10,weight:'600'}}},
+        y2:{position:'right',beginAtZero:false,border:{display:false},grid:{display:false},
+           ticks:{color:'#a2703c',font:{size:10},padding:6,callback:v=>v.toLocaleString()},
+           title:{display:true,text:'매도(대)',color:'#a2703c',font:{size:10,weight:'600'}}}
       }
     }
+  });
+})();
+
+// ── ③ KPI 스파크라인 (최근 14개월 실측 추이) ──
+(function(){
+  const sparks = [
+    {id:'kpiSpark1', data:TREND_SELL,     unit:'대'},
+    {id:'kpiSpark2', data:TREND_AUTOLOAN, unit:'건'}
+  ];
+  sparks.forEach(s=>{
+    new Chart(document.getElementById(s.id).getContext('2d'),{
+      type:'line',
+      data:{labels:TREND_LABELS,datasets:[{
+        data:s.data,borderColor:MP.green,
+        backgroundColor:c=>mpGradient(c.chart.ctx,c.chart.chartArea,MP.green,0.22),
+        borderWidth:2,borderCapStyle:'round',borderJoinStyle:'round',
+        pointRadius:0,pointHoverRadius:4,pointBackgroundColor:MP.green,pointBorderColor:'#fff',pointBorderWidth:2,
+        fill:true,tension:0.4
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        animation:{duration:800,easing:'easeOutQuart'},
+        layout:{padding:{top:4,bottom:2}},
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},
+          tooltip:Object.assign({},MP_TOOLTIP,{displayColors:false,
+            callbacks:{label:ctx=>` ${ctx.parsed.y.toLocaleString()}${s.unit}`}})},
+        scales:{x:{display:false},y:{display:false,beginAtZero:false}}
+      }
+    });
+  });
+})();
+
+// ── ④ KPI 3개월 비교 Pill 바 (당월·전월·전년동월) ──
+(function(){
+  const cmps = [
+    {id:'kpiCmp3', values:[35.8, 39.1, 38.2], unit:'%',  dec:1},
+    {id:'kpiCmp4', values:[5317, 4884, 4385], unit:'대', dec:0}
+  ];
+  cmps.forEach(c=>{
+    new Chart(document.getElementById(c.id).getContext('2d'),{
+      type:'bar',
+      data:{labels:['전년','전월','당월'],datasets:[{
+        data:c.values,
+        backgroundColor:[MP.greenSoft, MP.mint, MP.green],
+        borderRadius:99,borderSkipped:false,barThickness:8
+      }]},
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        animation:{duration:800,easing:'easeOutQuart'},
+        layout:{padding:{right:4}},
+        plugins:{legend:{display:false},
+          tooltip:Object.assign({},MP_TOOLTIP,{displayColors:false,
+            callbacks:{label:ctx=>` ${ctx.parsed.x.toLocaleString(undefined,{minimumFractionDigits:c.dec,maximumFractionDigits:c.dec})}${c.unit}`}})},
+        scales:{
+          x:{display:false,beginAtZero:true},
+          y:{border:{display:false},grid:{display:false},
+             ticks:{color:MP.mute,font:{size:9},padding:2,crossAlign:'far'}}
+        }
+      }
+    });
   });
 })();
 
@@ -1810,7 +2100,7 @@ const TREND_SELL     = [4516,5591,5693,5149,4632,4711,5661,5089,5973,4263,4535,4
       <td class="num-right ${yc}">${yrS}</td>
       <td><div style="display:flex;align-items:center;gap:6px">
         <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(share,100)}%"></div></div>
-        <span style="font-size:0.72rem;color:#5a7060">${share.toFixed(1)}%</span>
+        <span class="bar-pct">${share.toFixed(1)}%</span>
       </div></td>
     </tr>`;
   }).join('');
@@ -1832,7 +2122,7 @@ function renderSangsaTable(bodyId, data, total){
       <td class="num-right ${mc}">${mrS}</td>
       <td><div style="display:flex;align-items:center;gap:6px">
         <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(ratio,100)}%"></div></div>
-        <span style="font-size:0.72rem;color:#5a7060">${ratio.toFixed(1)}%</span>
+        <span class="bar-pct">${ratio.toFixed(1)}%</span>
       </div></td>
     </tr>`;
   }).join('');
